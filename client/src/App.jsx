@@ -3,9 +3,9 @@ import './App.css';
 
 import HomePage from './components/HomePage.jsx';
 import SignupPage from './components/SignupPage.jsx';
+import UserPage from './components/UserPage.jsx';
 /*
 import ChangePasswordPage from './components/ChangePasswordPage.jsx';
-import UserPage from './components/UserPage.jsx';
 import AdminPage from './components/AdminPage.jsx';
 */
 
