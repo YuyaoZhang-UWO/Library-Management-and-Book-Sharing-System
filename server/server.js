@@ -9,13 +9,13 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('../client'));
 
-// login, change-password
+// Authentication routes (login, logout)
 app.use('/api/auth', require('./routes/auth'));
-// open api
+// Open API (no authentication)
 app.use('/api/open', require('./routes/open/index'));
-// api for user
-app.use('/api/user', auth, requireRole('user'), require('./routes/user/index'));
-// api for admin
+// User API (authentication required, users and admins can access)
+app.use('/api/user', auth, requireRole('user', 'admin'), require('./routes/user/index'));
+// Admin API (authentication required, only admins can access)
 app.use(
   '/api/admin',
   auth,
@@ -23,11 +23,20 @@ app.use(
   require('./routes/admin/index'),
 );
 
-//unmatched route
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    status: 'error',
+    message: err.message || 'Internal server error',
+  });
+});
+
+// Unmatched routes
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource does not exist.',
+    status: 'error',
+    message: 'The requested resource does not exist',
   });
 });
 

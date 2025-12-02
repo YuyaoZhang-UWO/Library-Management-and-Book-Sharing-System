@@ -1,136 +1,115 @@
 const Joi = require('joi');
 
-// publich  subschema
+// 公共子schema
 const numberSchema = Joi.number().integer().required();
 const floatNumberSchema = Joi.number().required();
-const termCodeSchema = Joi.number().integer().min(1).max(9999).required();
-const sectionSchema = Joi.number().integer().min(1).max(99).optional();
-const courseNameSchema = Joi.string()
-  .required()
-  .custom((s) => (s.length > 100 ? s.slice(0, 100) : s));
-const memberIDSchema = Joi.string().length(8).required();
+const positiveNumberSchema = Joi.number().integer().min(1).required();
+const optionalPositiveNumberSchema = Joi.number().integer().min(1).optional();
 const nameSchema = Joi.string()
   .required()
   .custom((s) => (s.length > 200 ? s.slice(0, 200) : s));
-const roleSchema = Joi.string()
+const titleSchema = Joi.string()
   .required()
-  .custom((s) => (s.length > 10 ? s.slice(0, 10) : s));
-const assignmentNameSchema = Joi.string()
+  .custom((s) => (s.length > 200 ? s.slice(0, 200) : s));
+const authorSchema = Joi.string()
   .required()
-  .custom((s) => (s.length > 100 ? s.slice(0, 100) : s));
-const datetimeSchema = Joi.string()
-  .pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/)
-  .optional();
+  .custom((s) => (s.length > 200 ? s.slice(0, 200) : s));
+const isbnSchema = Joi.string()
+  .pattern(/^[0-9]{10,13}$/)
+  .optional()
+  .allow(null, '');
+const descriptionSchema = Joi.string()
+  .max(2000)
+  .optional()
+  .allow(null, '');
 const commentSchema = Joi.string()
-  .required()
-  .custom((s) => (s.length > 500 ? s.slice(0, 500) : s));
+  .max(1000)
+  .optional()
+  .allow(null, '');
+const reviewTextSchema = Joi.string()
+  .max(2000)
+  .optional()
+  .allow(null, '');
 const passwordSchema = Joi.string().min(4).max(16).required();
-const userNameSchema = Joi.string().email({ tlds: false }).required();
+const emailSchema = Joi.string().email({ tlds: false }).required();
+const dateSchema = Joi.string()
+  .pattern(/^\d{4}-\d{2}-\d{2}$/)
+  .optional();
+const ratingSchema = Joi.number().integer().min(1).max(5).required();
 
-const openSearchSchema = Joi.string()
+// 搜索schema
+const searchSchema = Joi.string()
   .trim()
-  .max(50)
+  .max(100)
   .allow('')
-  .custom((s) => s.toLowerCase());
+  .optional();
 
-// completed schema
-const addCourseSchema = Joi.object({
-  termCode: termCodeSchema,
-  courseName: courseNameSchema,
-  section: sectionSchema,
-});
-
-const CourseSchema = Joi.object({
-  termCode: termCodeSchema,
-  section: sectionSchema,
-});
-
-const memberSchema = Joi.object({
-  memberID: memberIDSchema,
-  firstName: nameSchema,
-  lastName: nameSchema,
-  role: roleSchema,
-});
-
-const courseMemberSchema = Joi.object({
-  termCode: termCodeSchema,
-  section: sectionSchema,
-  lastName: nameSchema,
-  firstName: nameSchema,
-  userName: userNameSchema,
+// 图书馆管理相关schema
+const loginSchema = Joi.object({
+  email: emailSchema,
   password: passwordSchema,
 });
 
-const courseMemberSchema2 = Joi.object({
-  lastName: nameSchema,
-  firstName: nameSchema,
-  userName: userNameSchema,
-  password: passwordSchema,
+const addBookSchema = Joi.object({
+  title: titleSchema,
+  author: authorSchema.optional(),
+  isbn: isbnSchema,
+  category: Joi.string().max(50).optional().allow(null, ''),
+  conditions: Joi.string().max(50).optional().allow(null, ''),
 });
 
-const courseRoleSchema = Joi.object({
-  termCode: termCodeSchema,
-  section: sectionSchema,
-  role: roleSchema.optional(),
+const updateBookSchema = Joi.object({
+  title: titleSchema.optional(),
+  author: authorSchema.optional(),
+  isbn: isbnSchema,
+  category: Joi.string().max(50).optional().allow(null, ''),
+  conditions: Joi.string().max(50).optional().allow(null, ''),
+  availability_status: Joi.string().valid('available', 'lent_out', 'reserved').optional(),
 });
 
-const deleteCourseMemberSchema = Joi.object({
-  termCode: termCodeSchema,
-  section: sectionSchema,
-  userName: userNameSchema,
+const borrowBookSchema = Joi.object({
+  book_id: positiveNumberSchema,
 });
 
-const signupSheetSchema = Joi.object({
-  termCode: termCodeSchema,
-  section: sectionSchema,
-  assignmentName: assignmentNameSchema,
-  notBefore: datetimeSchema,
-  notAfter: datetimeSchema,
+const returnBookSchema = Joi.object({
+  transaction_id: positiveNumberSchema,
 });
 
-const signupSlotSchema = Joi.object({
-  signupSheetID: numberSchema,
-  start: datetimeSchema.required(),
-  slotDuration: numberSchema.min(1).max(240),
-  numSlots: numberSchema.min(1).max(99),
-  maxMembers: numberSchema.min(1).max(99),
+const renewBookSchema = Joi.object({
+  transaction_id: positiveNumberSchema,
 });
 
-const signupSlotDetailSchema = Joi.object({
-  signupSlotID: numberSchema,
-  startTime: datetimeSchema,
-  endTime: datetimeSchema,
-  maxMembers: numberSchema.min(1).max(99).optional(),
+const waitlistBookSchema = Joi.object({
+  book_id: positiveNumberSchema,
 });
 
-const signupRecordSchema = Joi.object({
-  signupSheetID: numberSchema,
-  signupSlotID: numberSchema,
-  memberID: memberIDSchema,
+const cancelWaitlistSchema = Joi.object({
+  waitlist_id: positiveNumberSchema,
 });
 
-const deleteSignupRecordSchema = Joi.object({
-  signupSheetID: numberSchema,
-  memberID: memberIDSchema,
-});
-
-const gradeSchema = Joi.object({
-  signupSlotID: numberSchema,
-  userName: userNameSchema,
-  base_mark: floatNumberSchema.max(999),
-  bonus: floatNumberSchema.max(100),
-  penalty: floatNumberSchema.max(100),
+const addReviewSchema = Joi.object({
+  book_id: positiveNumberSchema,
+  rating: ratingSchema,
   comment: commentSchema,
 });
 
-const userNamePasswordSchema = Joi.object({
-  userName: userNameSchema,
-  password: passwordSchema,
+const updateReviewSchema = Joi.object({
+  review_id: positiveNumberSchema,
+  rating: ratingSchema.optional(),
+  comment: commentSchema,
 });
 
-const auditSchema = Joi.object({
-  userName: userNameSchema,
-  signupSlotID: numberSchema,
+const payFineSchema = Joi.object({
+  fine_id: positiveNumberSchema,
+  amount: floatNumberSchema.min(0),
+});
+
+const bookSearchSchema = Joi.object({
+  query: searchSchema,
+  category: Joi.string().max(100).optional(),
+  author: Joi.string().max(200).optional(),
+  page: Joi.number().integer().min(1).optional().default(1),
+  limit: Joi.number().integer().min(1).max(100).optional().default(20),
 });
 
 //joi validation
@@ -150,22 +129,25 @@ function validateInput(schema, data, res) {
 
 module.exports = {
   validateInput,
+  // 基础schema
   numberSchema,
-  addCourseSchema,
-  CourseSchema,
-  memberSchema,
-  courseMemberSchema,
-  courseMemberSchema2,
-  courseRoleSchema,
-  deleteCourseMemberSchema,
-  signupSheetSchema,
-  signupSlotSchema,
-  signupSlotDetailSchema,
-  signupRecordSchema,
-  deleteSignupRecordSchema,
-  gradeSchema,
-  userNameSchema,
-  userNamePasswordSchema,
-  openSearchSchema,
-  auditSchema,
+  positiveNumberSchema,
+  optionalPositiveNumberSchema,
+  floatNumberSchema,
+  emailSchema,
+  passwordSchema,
+  commentSchema,
+  // 图书馆管理schema
+  loginSchema,
+  addBookSchema,
+  updateBookSchema,
+  borrowBookSchema,
+  returnBookSchema,
+  renewBookSchema,
+  waitlistBookSchema,
+  cancelWaitlistSchema,
+  addReviewSchema,
+  updateReviewSchema,
+  payFineSchema,
+  bookSearchSchema,
 };
