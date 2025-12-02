@@ -13,10 +13,9 @@ router.post('/login', async (req, res) => {
     if (!validatedData) return;
 
     const { email, password } = validatedData;
-    const [rows] = await db.query(
-      'SELECT * FROM users WHERE email = ?',
-      [email]
-    );
+    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [
+      email,
+    ]);
 
     if (rows.length === 0) {
       return res.status(401).json({
@@ -44,23 +43,15 @@ router.post('/login', async (req, res) => {
         role: role,
       },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '7d' },
     );
 
     res.json({
-      status: 'success',
-      message: 'Log in successfully',
-      data: {
-        token,
-        user: {
-          user_id: user.user_id,
-          username: user.username,
-          email: user.email,
-          fname: user.fname,
-          lname: user.lname,
-          role: role,
-        },
-      },
+      message: 'Successful login',
+      token,
+      email: user.email,
+      role: role,
+      user_id: user.user_id,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -73,7 +64,6 @@ router.post('/login', async (req, res) => {
 
 // log out
 router.post('/logout', async (req, res) => {
-  
   res.json({
     status: 'success',
     message: 'Log out successfully',

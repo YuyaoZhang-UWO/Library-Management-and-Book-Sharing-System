@@ -47,6 +47,11 @@ function App() {
     localStorage.setItem('authToken', newToken);
     localStorage.setItem('authUser', JSON.stringify(newUser));
     setWantsPasswordChange(false);
+    const isAdmin = newUser.role === 'admin';
+    const targetPath = isAdmin ? '/admin' : '/user';
+    if (window.location.pathname !== targetPath) {
+      window.location.href = targetPath;
+    }
   };
 
   const handleLogout = () => {

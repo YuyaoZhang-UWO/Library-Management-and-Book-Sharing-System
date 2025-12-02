@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import './UserPage.css';
+/* import BorrowBooks from './BorrowBooks.jsx'; */
+import MyBorrowedBooks from './MyBorrowedBooks.jsx';
 /*
-import BorrowBooks from './BorrowBooks.jsx';
 import MyBooks from './MyBooks.jsx';
 import UserSettings from './UserSettings.jsx';
 */
@@ -36,6 +37,15 @@ export default function UserPage({
           </button>
           <button
             type="button"
+            className={
+              activeTab === 'borrowed' ? 'user-tab active' : 'user-tab'
+            }
+            onClick={() => setActiveTab('borrowed')}
+          >
+            My Borrowed Books
+          </button>
+          <button
+            type="button"
             className={activeTab === 'myBooks' ? 'user-tab active' : 'user-tab'}
             onClick={() => setActiveTab('myBooks')}
           >
@@ -54,8 +64,11 @@ export default function UserPage({
       </aside>
 
       <main className="user-content">
-        {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />}
-        {activeTab === 'myBooks' && <MyBooks token={token} user={user} />}
+        {/*  {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />} */}
+        {activeTab === 'borrowed' && (
+          <MyBorrowedBooks token={token} user={user} />
+        )}
+        {/*         {activeTab === 'myBooks' && <MyBooks token={token} user={user} />} */}
         {activeTab === 'settings' && (
           <UserSettings
             token={token}
