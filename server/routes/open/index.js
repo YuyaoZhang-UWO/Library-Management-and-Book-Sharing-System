@@ -180,7 +180,7 @@ router.get('/books/:book_id', async (req, res) => {
         },
         reviews: reviews.map((review) => ({
           ...review,
-          reviewer_name: review.reviewer_name || '匿名用户',
+          reviewer_name: review.reviewer_name || 'noname account',
         })),
       },
     });

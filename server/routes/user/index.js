@@ -43,7 +43,7 @@ router.get('/borrows', async (req, res) => {
     console.error('Get borrows error:', error);
     res.status(500).json({
       status: 'error',
-      message: '获取借阅记录失败',
+      message: 'Fail to get borrow record',
     });
   }
 });
@@ -72,7 +72,7 @@ router.post('/borrow', async (req, res) => {
         connection.release();
         return res.status(404).json({
           status: 'error',
-          message: '书籍不存在',
+          message: 'The book is not exist',
         });
       }
 
@@ -84,7 +84,7 @@ router.post('/borrow', async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: '该书籍当前不可借阅',
+          message: 'The book is not avalible to borrow',
         });
       }
 
@@ -99,7 +99,7 @@ router.post('/borrow', async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: '您已借阅该书籍且尚未归还',
+          message: 'The book you borrowed is unreturned',
         });
       }
 
@@ -114,7 +114,7 @@ router.post('/borrow', async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: '您有未支付的罚款，请先支付后再借书',
+          message: 'You have fine unpaid,please borrow after paying',
         });
       }
 
@@ -194,7 +194,7 @@ router.post('/return', async (req, res) => {
         connection.release();
         return res.status(404).json({
           status: 'error',
-          message: '借阅记录不存在',
+          message: 'The borrow record is not exist',
         });
       }
 
@@ -205,7 +205,7 @@ router.post('/return', async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: '该书籍已经归还',
+          message: 'The book is already returned',
         });
       }
 

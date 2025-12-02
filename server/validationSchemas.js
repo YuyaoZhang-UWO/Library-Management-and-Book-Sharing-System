@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-// 公共子schema
+// public subset schema
 const numberSchema = Joi.number().integer().required();
 const floatNumberSchema = Joi.number().required();
 const positiveNumberSchema = Joi.number().integer().min(1).required();
@@ -37,14 +37,14 @@ const dateSchema = Joi.string()
   .optional();
 const ratingSchema = Joi.number().integer().min(1).max(5).required();
 
-// 搜索schema
+// Search schema
 const searchSchema = Joi.string()
   .trim()
   .max(100)
   .allow('')
   .optional();
 
-// 图书馆管理相关schema
+// Library management schema
 const loginSchema = Joi.object({
   email: emailSchema,
   password: passwordSchema,
@@ -129,7 +129,7 @@ function validateInput(schema, data, res) {
 
 module.exports = {
   validateInput,
-  // 基础schema
+  // Basic schema
   numberSchema,
   positiveNumberSchema,
   optionalPositiveNumberSchema,
@@ -137,7 +137,7 @@ module.exports = {
   emailSchema,
   passwordSchema,
   commentSchema,
-  // 图书馆管理schema
+  // Library management schema
   loginSchema,
   addBookSchema,
   updateBookSchema,
