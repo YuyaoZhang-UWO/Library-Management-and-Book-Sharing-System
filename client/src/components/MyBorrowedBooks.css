@@ -1,0 +1,208 @@
+.borrow-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.borrow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.borrow-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.borrow-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.borrow-messages {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.borrow-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.borrow-message-success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.borrow-message-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.borrow-loading,
+.borrow-empty {
+  padding: 16px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.borrow-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.borrow-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.borrow-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.borrow-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.borrow-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.borrow-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.borrow-book-title {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.borrow-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.borrow-book-category {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.borrow-date-overdue {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.borrow-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.borrow-status-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.borrow-status-returned {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.borrow-status-overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.borrow-actions-column {
+  width: 180px;
+}
+
+.borrow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.borrow-button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #c26a29;
+  background: #c26a29;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.borrow-button:hover:not(:disabled) {
+  background: #a15620;
+  border-color: #a15620;
+}
+
+.borrow-button-secondary {
+  background: #ffffff;
+  color: #c26a29;
+  border-color: #c26a29;
+}
+
+.borrow-button-secondary:hover:not(:disabled) {
+  background: #fff4e6;
+}
+
+.borrow-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.borrow-no-actions {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .borrow-panel {
+    padding: 16px;
+  }
+
+  .borrow-title {
+    font-size: 18px;
+  }
+
+  .borrow-table {
+    font-size: 13px;
+  }
+}

@@ -3,9 +3,9 @@ import './App.css';
 
 import HomePage from './components/HomePage.jsx';
 import SignupPage from './components/SignupPage.jsx';
+import UserPage from './components/UserPage.jsx';
 /*
 import ChangePasswordPage from './components/ChangePasswordPage.jsx';
-import UserPage from './components/UserPage.jsx';
 import AdminPage from './components/AdminPage.jsx';
 */
 
@@ -47,6 +47,11 @@ function App() {
     localStorage.setItem('authToken', newToken);
     localStorage.setItem('authUser', JSON.stringify(newUser));
     setWantsPasswordChange(false);
+    const isAdmin = newUser.role === 'admin';
+    const targetPath = isAdmin ? '/admin' : '/user';
+    if (window.location.pathname !== targetPath) {
+      window.location.href = targetPath;
+    }
   };
 
   const handleLogout = () => {
