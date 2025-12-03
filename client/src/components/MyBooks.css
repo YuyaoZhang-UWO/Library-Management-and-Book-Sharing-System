@@ -1,0 +1,266 @@
+.my-books-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.my-books-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.my-books-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.my-books-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.my-books-user {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.my-books-user span {
+  font-weight: 600;
+}
+
+/* Add book form */
+
+.my-books-form {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 18px 18px;
+  margin-bottom: 16px;
+  background: #f9fafb;
+}
+
+.my-books-form-title {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.my-books-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.my-books-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.my-books-label-wide {
+  grid-column: 1 / -1;
+}
+
+.my-books-label-text {
+  font-weight: 500;
+}
+
+.my-books-input {
+  padding: 9px 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  outline: none;
+  font-size: 14px;
+}
+
+.my-books-input:focus {
+  border-color: #c26a29;
+  box-shadow: 0 0 0 3px rgba(194, 106, 41, 0.2);
+}
+
+.my-books-actions {
+  margin-top: 12px;
+}
+
+.my-books-button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #c26a29;
+  background: #c26a29;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.my-books-button:hover:not(:disabled) {
+  background: #a15620;
+  border-color: #a15620;
+}
+
+.my-books-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.my-books-button-small {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.my-books-button-danger {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+.my-books-button-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* Messages */
+
+.my-books-messages {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.my-books-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.my-books-message-success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.my-books-message-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* List */
+
+.my-books-list-panel {
+  margin-top: 8px;
+}
+
+.my-books-list-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.my-books-loading,
+.my-books-empty {
+  padding: 14px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.my-books-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.my-books-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.my-books-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.my-books-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.my-books-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.my-books-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.my-books-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-books-book-title {
+  font-weight: 500;
+  color: #111827;
+}
+
+.my-books-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.my-books-tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.my-books-status {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.my-books-actions-column {
+  width: 110px;
+}
+
+@media (max-width: 768px) {
+  .my-books-panel {
+    padding: 16px;
+  }
+
+  .my-books-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .my-books-label-wide {
+    grid-column: auto;
+  }
+}

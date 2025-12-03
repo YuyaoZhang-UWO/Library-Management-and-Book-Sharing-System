@@ -136,11 +136,6 @@ export default function BorrowBooks({ token, user }) {
             Search available books and borrow them from other users.
           </p>
         </div>
-        {user && (
-          <p className="borrow-books-user">
-            Logged in as <span>{user.first_name}</span>
-          </p>
-        )}
       </div>
 
       <form className="borrow-books-form" onSubmit={handleSubmit}>

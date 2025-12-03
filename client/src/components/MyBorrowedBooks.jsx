@@ -122,11 +122,6 @@ export default function MyBorrowedBooks({ token, user }) {
     <section className="borrow-panel">
       <div className="borrow-header">
         <h2 className="borrow-title">My Borrowed Books</h2>
-        <p className="borrow-subtitle">
-          {user?.first_name
-            ? `Logged in as ${user.first_name}`
-            : 'Current user'}
-        </p>
       </div>
 
       {(infoMessage || errorMessage) && (

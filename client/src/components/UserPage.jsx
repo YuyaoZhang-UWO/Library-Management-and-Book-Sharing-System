@@ -2,10 +2,8 @@ import { useState } from 'react';
 import './UserPage.css';
 import BorrowBooks from './BorrowBooks.jsx';
 import MyBorrowedBooks from './MyBorrowedBooks.jsx';
-/*
 import MyBooks from './MyBooks.jsx';
-import UserSettings from './UserSettings.jsx';
-*/
+/* import UserSettings from './UserSettings.jsx'; */
 
 export default function UserPage({
   token,
@@ -19,7 +17,7 @@ export default function UserPage({
     <div className="user-layout">
       <aside className="user-sidebar">
         <div className="user-sidebar-header">
-          <h2 className="user-sidebar-title">Welcome, {user.first_name}</h2>
+          <h2 className="user-sidebar-title">Welcome！ {user}</h2>
           <div className="user-sidebar-actions">
             <button type="button" onClick={onLogout}>
               Log Out
@@ -68,7 +66,7 @@ export default function UserPage({
         {activeTab === 'borrowed' && (
           <MyBorrowedBooks token={token} user={user} />
         )}
-        {/*         {activeTab === 'myBooks' && <MyBooks token={token} user={user} />} */}
+        {activeTab === 'myBooks' && <MyBooks token={token} user={user} />}
         {activeTab === 'settings' && (
           <UserSettings
             token={token}
