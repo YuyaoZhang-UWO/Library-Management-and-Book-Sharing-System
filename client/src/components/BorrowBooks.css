@@ -1,0 +1,260 @@
+.borrow-books-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.borrow-books-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.borrow-books-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.borrow-books-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.borrow-books-user {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.borrow-books-user span {
+  font-weight: 600;
+}
+
+.borrow-books-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.borrow-books-row {
+  width: 100%;
+}
+
+.borrow-books-row-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.borrow-books-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.borrow-books-label-text {
+  font-weight: 500;
+}
+
+.borrow-books-input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  outline: none;
+  font-size: 14px;
+  min-width: 180px;
+}
+
+.borrow-books-input:focus {
+  border-color: #c26a29;
+  box-shadow: 0 0 0 3px rgba(194, 106, 41, 0.2);
+}
+
+.borrow-books-actions {
+  display: flex;
+  align-items: center;
+}
+
+.borrow-books-button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #c26a29;
+  background: #c26a29;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.borrow-books-button:hover:not(:disabled) {
+  background: #a15620;
+  border-color: #a15620;
+}
+
+.borrow-books-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.borrow-books-button-small {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.borrow-books-messages {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.borrow-books-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.borrow-books-message-success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.borrow-books-message-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.borrow-books-empty {
+  padding: 16px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.borrow-books-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.borrow-books-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.borrow-books-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.borrow-books-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.borrow-books-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.borrow-books-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.borrow-books-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.borrow-books-book-title {
+  font-weight: 500;
+  color: #111827;
+}
+
+.borrow-books-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.borrow-books-tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.borrow-books-actions-column {
+  width: 130px;
+}
+
+.borrow-books-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.borrow-books-pagination button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.borrow-books-pagination button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.borrow-books-pagination button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .borrow-books-panel {
+    padding: 16px;
+  }
+
+  .borrow-books-row-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .borrow-books-input {
+    width: 100%;
+  }
+
+  .borrow-books-actions {
+    justify-content: flex-start;
+  }
+}

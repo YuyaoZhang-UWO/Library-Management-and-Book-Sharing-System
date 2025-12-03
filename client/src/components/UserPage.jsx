@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './UserPage.css';
-/* import BorrowBooks from './BorrowBooks.jsx'; */
+import BorrowBooks from './BorrowBooks.jsx';
 import MyBorrowedBooks from './MyBorrowedBooks.jsx';
 /*
 import MyBooks from './MyBooks.jsx';
@@ -64,7 +64,7 @@ export default function UserPage({
       </aside>
 
       <main className="user-content">
-        {/*  {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />} */}
+        {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />}
         {activeTab === 'borrowed' && (
           <MyBorrowedBooks token={token} user={user} />
         )}
