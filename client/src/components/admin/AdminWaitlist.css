@@ -1,0 +1,237 @@
+.admin-waitlist-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.admin-waitlist-header {
+  margin-bottom: 18px;
+}
+
+.admin-waitlist-title {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-waitlist-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.admin-waitlist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+  align-items: flex-end;
+}
+
+.admin-waitlist-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.admin-waitlist-filter-label {
+  font-size: 13px;
+  color: #374151;
+}
+
+.admin-waitlist-filter-input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.admin-waitlist-filter-input:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.18);
+}
+
+.admin-waitlist-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-waitlist-button {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-waitlist-button-primary {
+  background: #f39c12;
+  border-color: #f39c12;
+  color: #ffffff;
+}
+
+.admin-waitlist-button-primary:hover:enabled {
+  background: #d17d09;
+  border-color: #d17d09;
+}
+
+.admin-waitlist-button-secondary {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.admin-waitlist-button-secondary:hover:enabled {
+  background: #f3f4f6;
+}
+
+.admin-waitlist-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.admin-waitlist-messages {
+  margin-bottom: 10px;
+}
+
+.admin-waitlist-message {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.admin-waitlist-message-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.admin-waitlist-message-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.admin-waitlist-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-waitlist-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.admin-waitlist-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 500;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.admin-waitlist-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.admin-waitlist-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.admin-waitlist-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-waitlist-user-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.admin-waitlist-user-email {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.admin-waitlist-user-id {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.admin-waitlist-book-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-waitlist-book-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-waitlist-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.admin-waitlist-tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.admin-waitlist-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.admin-waitlist-pagination button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.admin-waitlist-pagination button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.admin-waitlist-pagination button:not(:disabled):hover {
+  background: #f3f4f6;
+}
+
+@media (max-width: 800px) {
+  .admin-waitlist-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-waitlist-filter-actions {
+    justify-content: flex-start;
+  }
+}

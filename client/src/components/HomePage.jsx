@@ -21,21 +21,20 @@ function HomePage({ onLoginSuccess }) {
         body: JSON.stringify({ email, password }),
       });
 
-      let data = {};
-      try {
-        const text = await response.text();
-        data = text ? JSON.parse(text) : {};
-      } catch (parseErr) {
-        data = {};
-      }
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setMessage(data.message || 'Login unsuccessful.');
         return;
       }
 
-      setMessage('Login successful.');
-      onLoginSuccess(data.token, data.email, data.is_admin);
+      setMessage(data.message || 'Login successful.');
+
+      onLoginSuccess(data.token, {
+        email: data.email,
+        role: data.role,
+        user_id: data.user_id,
+      });
     } catch (err) {
       console.error('Login error:', err);
       setMessage('Error contacting server.');

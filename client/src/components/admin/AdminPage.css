@@ -1,10 +1,10 @@
-.user-layout {
+.admin-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
 }
 
-.user-sidebar {
+.admin-sidebar {
   background: linear-gradient(180deg, #f7c98a, #c77a42);
   color: #ffffff;
   padding: 24px 16px;
@@ -12,23 +12,23 @@
   flex-direction: column;
 }
 
-.user-sidebar-header {
+.admin-sidebar-header {
   margin-bottom: 32px;
 }
 
-.user-sidebar-title {
+.admin-sidebar-title {
   margin: 0 0 8px 0;
   font-size: 18px;
   font-weight: 600;
 }
 
-.user-sidebar-actions {
+.admin-sidebar-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.user-sidebar-actions button {
+.admin-sidebar-actions button {
   padding: 8px 10px;
   border-radius: 8px;
   border: none;
@@ -38,17 +38,17 @@
   cursor: pointer;
 }
 
-.user-sidebar-actions button:hover {
+.admin-sidebar-actions button:hover {
   background: #e5e7eb;
 }
 
-.user-sidebar-tabs {
+.admin-sidebar-tabs {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.user-tab {
+.admin-tab {
   all: unset;
   display: block;
   background: #1f2937;
@@ -59,25 +59,50 @@
   font-size: 14px;
 }
 
-.user-tab:hover {
+.admin-tab:hover {
   background: #334155;
 }
 
-.user-tab.active {
+.admin-tab.active {
   background: #f39c12;
   color: #ffffff;
 }
 
-.user-content {
+.admin-content {
   padding: 40px;
+  background-image: url('/login-bg.jpg');
+  background-size: cover;
+  background-position: left center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+}
+
+.admin-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.admin-panel-title {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-panel-text {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
 }
 
 @media (max-width: 960px) {
-  .user-layout {
+  .admin-layout {
     grid-template-columns: 1fr;
   }
 
-  .user-sidebar {
+  .admin-sidebar {
     border-radius: 12px 12px 0 0;
     flex-direction: row;
     align-items: center;
@@ -85,14 +110,14 @@
     margin-bottom: 8px;
   }
 
-  .user-content {
+  .admin-content {
     border-radius: 0 0 12px 12px;
     border-top: none;
   }
 }
 
 @media (max-width: 600px) {
-  .user-sidebar {
+  .admin-sidebar {
     flex-wrap: wrap;
   }
 }

@@ -1,0 +1,103 @@
+.user-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.user-sidebar {
+  background: linear-gradient(180deg, #f7c98a, #c77a42);
+  color: #ffffff;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-sidebar-header {
+  margin-bottom: 32px;
+}
+
+.user-sidebar-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.user-sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-sidebar-actions button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.user-sidebar-actions button:hover {
+  background: #e5e7eb;
+}
+
+.user-sidebar-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.user-tab {
+  all: unset;
+  display: block;
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.user-tab:hover {
+  background: #334155;
+}
+
+.user-tab.active {
+  background: #f39c12;
+  color: #ffffff;
+}
+
+.user-content {
+  padding: 40px;
+  background-image: url('/login-bg.jpg');
+  background-size: cover;
+  background-position: left center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+}
+
+@media (max-width: 960px) {
+  .user-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .user-sidebar {
+    border-radius: 12px 12px 0 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .user-content {
+    border-radius: 0 0 12px 12px;
+    border-top: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-sidebar {
+    flex-wrap: wrap;
+  }
+}

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import './App.css';
 
 import HomePage from './components/HomePage.jsx';
-import SignupPage from './components/SignupPage.jsx';
-import UserPage from './components/UserPage.jsx';
+import SignupPage from './components/user/SignupPage.jsx';
+import UserPage from './components/user/UserPage.jsx';
+import AdminPage from './components/admin/AdminPage.jsx';
 /*
 import ChangePasswordPage from './components/ChangePasswordPage.jsx';
-import AdminPage from './components/AdminPage.jsx';
 */
 
 function isTokenExpired(token) {
@@ -101,7 +101,7 @@ function App() {
     );
   }
 
-  const isAdmin = user.role === 'administrator';
+  const isAdmin = user.role === 'admin';
   const targetPath = isAdmin ? '/admin' : '/user';
 
   if (pathname !== targetPath) {

@@ -1,0 +1,270 @@
+.admin-users-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.admin-users-header {
+  margin-bottom: 16px;
+}
+
+.admin-users-title {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-users-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.admin-users-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-users-summary-item {
+  min-width: 150px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #e5e7eb;
+}
+
+.admin-users-summary-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.admin-users-summary-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-users-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.admin-users-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 240px;
+}
+
+.admin-users-filter-label {
+  font-size: 13px;
+  color: #374151;
+}
+
+.admin-users-filter-input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.admin-users-filter-input:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.18);
+}
+
+.admin-users-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-users-button {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-users-button-primary {
+  background: #f39c12;
+  border-color: #f39c12;
+  color: #ffffff;
+}
+
+.admin-users-button-primary:hover:enabled {
+  background: #d17d09;
+  border-color: #d17d09;
+}
+
+.admin-users-button-secondary {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.admin-users-button-secondary:hover:enabled {
+  background: #f3f4f6;
+}
+
+.admin-users-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.admin-users-messages {
+  margin-bottom: 10px;
+}
+
+.admin-users-message {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.admin-users-message-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.admin-users-message-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.admin-users-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.admin-users-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 500;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.admin-users-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.admin-users-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.admin-users-username-cell {
+  white-space: nowrap;
+}
+
+.admin-users-username {
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-users-name-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-users-name-main {
+  font-size: 14px;
+  color: #111827;
+}
+
+.admin-users-email-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-users-email {
+  font-size: 13px;
+  color: #1f2933;
+  word-break: break-all;
+}
+
+.admin-users-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-users-role-admin {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.admin-users-role-user {
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.admin-users-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.admin-users-pagination button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.admin-users-pagination button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.admin-users-pagination button:not(:disabled):hover {
+  background: #f3f4f6;
+}
+
+@media (max-width: 800px) {
+  .admin-users-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-users-filter-actions {
+    justify-content: flex-start;
+  }
+}

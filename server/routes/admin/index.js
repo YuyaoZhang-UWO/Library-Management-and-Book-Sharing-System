@@ -102,7 +102,7 @@ router.get('/books/:book_id', async (req, res) => {
       FROM books b
       JOIN users u ON b.owner_id = u.user_id
       WHERE b.book_id = ?`,
-      [book_id]
+      [book_id],
     );
 
     if (books.length === 0) {
@@ -138,7 +138,7 @@ router.post('/books', async (req, res) => {
     if (isbn) {
       const [existingBooks] = await db.query(
         'SELECT * FROM books WHERE isbn = ?',
-        [isbn]
+        [isbn],
       );
 
       if (existingBooks.length > 0) {
@@ -153,7 +153,14 @@ router.post('/books', async (req, res) => {
       `INSERT INTO books 
        (title, author, isbn, category, conditions, owner_id, availability_status, created_at)
        VALUES (?, ?, ?, ?, ?, ?, 'available', NOW())`,
-      [title, author || null, isbn || null, category || null, conditions || null, owner_id]
+      [
+        title,
+        author || null,
+        isbn || null,
+        category || null,
+        conditions || null,
+        owner_id,
+      ],
     );
 
     res.status(201).json({
@@ -203,7 +210,7 @@ router.put('/books/:book_id', async (req, res) => {
     if (validatedData.isbn) {
       const [existingBooks] = await db.query(
         'SELECT * FROM books WHERE isbn = ? AND book_id != ?',
-        [validatedData.isbn, book_id]
+        [validatedData.isbn, book_id],
       );
 
       if (existingBooks.length > 0) {
@@ -247,7 +254,7 @@ router.put('/books/:book_id', async (req, res) => {
 
     await db.query(
       `UPDATE books SET ${updateFields.join(', ')} WHERE book_id = ?`,
-      updateValues
+      updateValues,
     );
 
     res.json({
@@ -443,7 +450,7 @@ router.get('/waitlist', async (req, res) => {
 
     const [waitlist] = await db.query(query, queryParams);
 
-        // get total number of waitlist
+    // get total number of waitlist
     let countQuery = 'SELECT COUNT(*) as total FROM waitlist WHERE 1=1';
     const countParams = [];
     if (book_id) {
@@ -518,7 +525,8 @@ router.get('/fines', async (req, res) => {
     const [fines] = await db.query(query, queryParams);
 
     // get total number of fines and total amount
-    let countQuery = 'SELECT COUNT(*) as total, SUM(amount) as total_amount FROM fines WHERE 1=1';
+    let countQuery =
+      'SELECT COUNT(*) as total, SUM(amount) as total_amount FROM fines WHERE 1=1';
     const countParams = [];
     if (paid !== undefined) {
       countQuery += ` AND paid = ?`;
@@ -600,7 +608,7 @@ router.put('/fines/:fine_id', async (req, res) => {
 
     await db.query(
       `UPDATE fines SET ${updateFields.join(', ')} WHERE fine_id = ?`,
-      updateValues
+      updateValues,
     );
 
     res.json({
@@ -640,7 +648,12 @@ router.get('/users', async (req, res) => {
     if (search) {
       query += ` AND (username LIKE ? OR email LIKE ? OR fname LIKE ? OR lname LIKE ?)`;
       const searchPattern = `%${search}%`;
-      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      queryParams.push(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+      );
     }
 
     query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
@@ -654,7 +667,12 @@ router.get('/users', async (req, res) => {
     if (search) {
       countQuery += ` AND (username LIKE ? OR email LIKE ? OR fname LIKE ? OR lname LIKE ?)`;
       const searchPattern = `%${search}%`;
-      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+      );
     }
     const [countResult] = await db.query(countQuery, countParams);
     const total = countResult[0].total;
@@ -675,7 +693,7 @@ router.get('/users', async (req, res) => {
     console.error('Get users error:', error);
     res.status(500).json({
       status: 'error',
-                message: 'Failed to get users',
+      message: 'Failed to get users',
     });
   }
 });
@@ -691,17 +709,17 @@ router.get('/statistics', async (req, res) => {
 
     // active borrow count
     const [activeBorrows] = await db.query(
-      "SELECT COUNT(*) as total FROM borrow_transactions WHERE status = 'borrowed'"
+      "SELECT COUNT(*) as total FROM borrow_transactions WHERE status = 'borrowed'",
     );
 
     // pending waitlist count
     const [waitlistCount] = await db.query(
-      'SELECT COUNT(*) as total FROM waitlist'
+      'SELECT COUNT(*) as total FROM waitlist',
     );
 
     // total unpaid fines
     const [unpaidFines] = await db.query(
-      'SELECT COUNT(*) as count, SUM(amount) as total FROM fines WHERE paid = FALSE'
+      'SELECT COUNT(*) as count, SUM(amount) as total FROM fines WHERE paid = FALSE',
     );
 
     // recent borrow trends in the last 30 days
@@ -710,7 +728,7 @@ router.get('/statistics', async (req, res) => {
        FROM borrow_transactions 
        WHERE borrow_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
        GROUP BY DATE(borrow_date)
-       ORDER BY date DESC`
+       ORDER BY date DESC`,
     );
 
     // borrow times by category
@@ -722,7 +740,7 @@ router.get('/statistics', async (req, res) => {
       JOIN books b ON bt.book_id = b.book_id
       GROUP BY b.category
       ORDER BY borrow_times DESC
-      LIMIT 10`
+      LIMIT 10`,
     );
 
     res.json({

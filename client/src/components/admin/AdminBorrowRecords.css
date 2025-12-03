@@ -1,0 +1,266 @@
+.admin-borrows-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.admin-borrows-header {
+  margin-bottom: 18px;
+}
+
+.admin-borrows-title {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-borrows-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.admin-borrows-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+  align-items: flex-end;
+}
+
+.admin-borrows-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.admin-borrows-filter-label {
+  font-size: 13px;
+  color: #374151;
+}
+
+.admin-borrows-filter-input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.admin-borrows-filter-input:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.18);
+}
+
+.admin-borrows-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-borrows-button {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-borrows-button-primary {
+  background: #f39c12;
+  border-color: #f39c12;
+  color: #ffffff;
+}
+
+.admin-borrows-button-primary:hover:enabled {
+  background: #d17d09;
+  border-color: #d17d09;
+}
+
+.admin-borrows-button-secondary {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.admin-borrows-button-secondary:hover:enabled {
+  background: #f3f4f6;
+}
+
+.admin-borrows-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.admin-borrows-messages {
+  margin-bottom: 10px;
+}
+
+.admin-borrows-message {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.admin-borrows-message-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.admin-borrows-message-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.admin-borrows-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-borrows-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.admin-borrows-table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 500;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.admin-borrows-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.admin-borrows-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.admin-borrows-book-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-borrows-book-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-borrows-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.admin-borrows-tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.admin-borrows-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-borrows-user-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.admin-borrows-user-email {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.admin-borrows-status-cell {
+  white-space: nowrap;
+}
+
+.admin-borrows-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.admin-borrows-status-borrowed {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.admin-borrows-status-returned {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.admin-borrows-status-overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-borrows-status-cancelled {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.admin-borrows-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.admin-borrows-pagination button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.admin-borrows-pagination button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.admin-borrows-pagination button:not(:disabled):hover {
+  background: #f3f4f6;
+}
+
+@media (max-width: 800px) {
+  .admin-borrows-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-borrows-filter-actions {
+    justify-content: flex-start;
+  }
+}
