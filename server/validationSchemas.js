@@ -112,6 +112,15 @@ const bookSearchSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).optional().default(20),
 });
 
+const addFavoriteSchema = Joi.object({
+  book_id: positiveNumberSchema,
+});
+
+const removeFavoriteSchema = Joi.object({
+  favorite_id: positiveNumberSchema.optional(),
+  book_id: positiveNumberSchema.optional(),
+}).or('favorite_id', 'book_id');
+
 //joi validation
 function validateInput(schema, data, res) {
   const { value, error } = schema.validate(data, { abortEarly: false });
@@ -150,4 +159,6 @@ module.exports = {
   updateReviewSchema,
   payFineSchema,
   bookSearchSchema,
+  addFavoriteSchema,
+  removeFavoriteSchema,
 };

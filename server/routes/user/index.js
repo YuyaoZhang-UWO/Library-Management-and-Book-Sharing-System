@@ -10,6 +10,8 @@ const {
   cancelWaitlistSchema,
   addReviewSchema,
   updateReviewSchema,
+  addFavoriteSchema,
+  removeFavoriteSchema,
 } = require('../../validationSchemas');
 
 // Get current user's borrow records
@@ -858,6 +860,213 @@ router.get('/notifications', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to get notifications',
+    });
+  }
+});
+
+// Get my favorites
+router.get('/favorites', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get favorites with book details
+    const [favorites] = await db.query(
+      `SELECT 
+        f.favorite_id,
+        f.book_id,
+        b.title,
+        b.author,
+        b.isbn,
+        b.category,
+        b.conditions,
+        f.created_at
+      FROM favorites f
+      JOIN books b ON f.book_id = b.book_id
+      WHERE f.user_id = ?
+      ORDER BY f.created_at DESC
+      LIMIT ? OFFSET ?`,
+      [userId, parseInt(limit), offset]
+    );
+
+    // Get total count
+    const [countResult] = await db.query(
+      'SELECT COUNT(*) as total FROM favorites WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({
+      status: 'success',
+      data: {
+        favorites,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: countResult[0].total,
+          totalPages: Math.ceil(countResult[0].total / parseInt(limit)),
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Get favorites error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get favorites',
+    });
+  }
+});
+
+// Add favorite
+router.post('/favorites', async (req, res) => {
+  try {
+    const validatedData = validateInput(addFavoriteSchema, req.body, res);
+    if (!validatedData) return;
+
+    const userId = req.user.user_id;
+    const { book_id } = validatedData;
+
+    // Check if the book exists
+    const [books] = await db.query('SELECT * FROM books WHERE book_id = ?', [
+      book_id,
+    ]);
+
+    if (books.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'The book does not exist',
+      });
+    }
+
+    // Check if already favorited
+    const [existingFavorites] = await db.query(
+      'SELECT * FROM favorites WHERE user_id = ? AND book_id = ?',
+      [userId, book_id]
+    );
+
+    if (existingFavorites.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'This book is already in your favorites',
+      });
+    }
+
+    // Add to favorites
+    const [result] = await db.query(
+      `INSERT INTO favorites (user_id, book_id, created_at)
+       VALUES (?, ?, NOW())`,
+      [userId, book_id]
+    );
+
+    res.json({
+      status: 'success',
+      message: 'Added to favorites successfully',
+      data: {
+        favorite_id: result.insertId,
+      },
+    });
+  } catch (error) {
+    console.error('Add favorite error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to add favorite',
+    });
+  }
+});
+
+// Remove favorite
+router.delete('/favorites', async (req, res) => {
+  try {
+    const validatedData = validateInput(removeFavoriteSchema, req.body, res);
+    if (!validatedData) return;
+
+    const userId = req.user.user_id;
+    const { favorite_id, book_id } = validatedData;
+
+    let favorite;
+
+    if (favorite_id) {
+      // Delete by favorite_id
+      const [favorites] = await db.query(
+        'SELECT * FROM favorites WHERE favorite_id = ? AND user_id = ?',
+        [favorite_id, userId]
+      );
+
+      if (favorites.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'The favorite record does not exist',
+        });
+      }
+
+      favorite = favorites[0];
+      await db.query('DELETE FROM favorites WHERE favorite_id = ?', [
+        favorite_id,
+      ]);
+    } else if (book_id) {
+      // Delete by book_id
+      const [favorites] = await db.query(
+        'SELECT * FROM favorites WHERE book_id = ? AND user_id = ?',
+        [book_id, userId]
+      );
+
+      if (favorites.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'This book is not in your favorites',
+        });
+      }
+
+      favorite = favorites[0];
+      await db.query(
+        'DELETE FROM favorites WHERE book_id = ? AND user_id = ?',
+        [book_id, userId]
+      );
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Removed from favorites successfully',
+    });
+  } catch (error) {
+    console.error('Remove favorite error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to remove favorite',
+    });
+  }
+});
+
+// Check if a book is favorited
+router.get('/favorites/check/:book_id', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const book_id = parseInt(req.params.book_id);
+
+    if (!book_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid book_id',
+      });
+    }
+
+    const [favorites] = await db.query(
+      'SELECT favorite_id FROM favorites WHERE user_id = ? AND book_id = ?',
+      [userId, book_id]
+    );
+
+    res.json({
+      status: 'success',
+      data: {
+        is_favorited: favorites.length > 0,
+        favorite_id: favorites.length > 0 ? favorites[0].favorite_id : null,
+      },
+    });
+  } catch (error) {
+    console.error('Check favorite error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to check favorite status',
     });
   }
 });
