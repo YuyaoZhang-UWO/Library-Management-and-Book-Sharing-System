@@ -6,6 +6,7 @@ import AdminBorrowRecords from './AdminBorrowRecords.jsx';
 import AdminWaitlist from './AdminWaitlist.jsx';
 import AdminFines from './AdminFines.jsx';
 import AdminUsers from './AdminUsers.jsx';
+import Analytics from './Analytics.jsx';
 
 export default function AdminPage({
   token,
@@ -38,6 +39,10 @@ export default function AdminPage({
 
     if (activeTab === 'users') {
       return <AdminUsers token={token} />;
+    }
+
+    if (activeTab === 'analytics') {
+      return <Analytics token={token} />;
     }
 
     return null;
@@ -113,6 +118,13 @@ export default function AdminPage({
             onClick={() => setActiveTab('users')}
           >
             Users
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'analytics' ? 'admin-tab active' : 'admin-tab'}
+            onClick={() => setActiveTab('analytics')}
+          >
+            Analytics
           </button>
         </nav>
       </aside>

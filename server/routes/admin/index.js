@@ -798,6 +798,9 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Analytics routes
+router.use('/analytics', require('./analytics'));
+
 // Get statistics
 router.get('/statistics', async (req, res) => {
   try {

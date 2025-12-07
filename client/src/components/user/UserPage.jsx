@@ -6,6 +6,7 @@ import MyBooks from './MyBooks.jsx';
 import MyWaitlist from './MyWaitlist.jsx';
 import MyFines from './MyFines.jsx';
 import Notifications from './Notifications.jsx';
+import Recommendations from './Recommendations.jsx';
 
 export default function UserPage({
   token,
@@ -13,7 +14,7 @@ export default function UserPage({
   onLogout,
   onChangePasswordClick,
 }) {
-  const [activeTab, setActiveTab] = useState('borrow');
+  const [activeTab, setActiveTab] = useState('recommendations');
 
   return (
     <div className="user-layout">
@@ -31,6 +32,14 @@ export default function UserPage({
         </div>
 
         <div className="user-sidebar-tabs">
+          <button
+            type="button"
+            className={activeTab === 'recommendations' ? 'user-tab active' : 'user-tab'}
+            onClick={() => setActiveTab('recommendations')}
+          >
+            📚 Recommendations
+          </button>
+
           <button
             type="button"
             className={activeTab === 'borrow' ? 'user-tab active' : 'user-tab'}
@@ -88,6 +97,8 @@ export default function UserPage({
       </aside>
 
       <main className="user-content">
+        {activeTab === 'recommendations' && <Recommendations token={token} user={user} />}
+
         {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />}
 
         {activeTab === 'borrowed' && (
