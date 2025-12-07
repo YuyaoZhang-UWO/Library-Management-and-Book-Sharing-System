@@ -47,9 +47,8 @@ router.get('/books', async (req, res) => {
     const [books] = await db.query(query, queryParams);
 
     // Format the response to match the old structure
+    // Return available_count (number of available copies) instead of status
     const formattedBooks = books.map(book => {
-      const availability_status = book.available_copies > 0 ? 'available' : 'lent_out';
-      
       return {
         book_id: book.book_id,
         title: book.title,
@@ -59,7 +58,7 @@ router.get('/books', async (req, res) => {
         conditions: book.conditions,
         owner_id: book.owner_id,
         owner_name: book.owner_name,
-        availability_status: availability_status,
+        available_count: parseInt(book.available_copies || 0), // Number of available copies
         created_at: book.created_at,
       };
     });
@@ -147,9 +146,8 @@ router.get('/books/:book_id', async (req, res) => {
       [book_id]
     );
 
-    // Determine availability status
-    const hasAvailable = inventory.some(inv => inv.status === 'available');
-    const availability_status = hasAvailable ? 'available' : 'lent_out';
+    // Count available copies
+    const availableCount = inventory.filter(inv => inv.status === 'available').length;
     
     // Get first available owner info for backward compatibility
     const firstAvailable = inventory.find(inv => inv.status === 'available');
@@ -162,7 +160,7 @@ router.get('/books/:book_id', async (req, res) => {
         ...book,
         owner_id,
         owner_name,
-        availability_status,
+        available_count: availableCount, // Number of available copies
         inventory: inventory,
       },
     });
@@ -375,32 +373,10 @@ router.put('/books/:book_id', async (req, res) => {
         );
       }
 
-      // Handle availability_status through inventory table
-      // Note: availability_status is now managed through inventory table
-      // If availability_status is provided, we can update non-borrowed inventory items
-      if (validatedData.availability_status !== undefined) {
-        const newStatus = validatedData.availability_status;
-        
-        if (newStatus === 'available' || newStatus === 'reserved') {
-          // Set all non-borrowed inventory items to the new status
-          // Only update items that are not currently borrowed
-          // Use LEFT JOIN to find items without active borrow transactions
-          // borrow_transactions.status can be 'returned' or 'overdue'
-          // If return_date IS NULL, the book is still borrowed
-          await connection.query(
-            `UPDATE inventory i
-             LEFT JOIN borrow_transactions bt ON i.inventory_id = bt.inventory_id 
-               AND bt.return_date IS NULL
-             SET i.status = ?
-             WHERE i.book_id = ? 
-             AND i.status != 'borrowed'
-             AND bt.transaction_id IS NULL`,
-            [newStatus, book_id]
-          );
-        }
-        // If availability_status is 'lent_out', it means all copies are borrowed
-        // This is automatically managed by the system through triggers, no need to update
-      }
+      // Note: availability_status is now read-only and computed from inventory table
+      // It cannot be modified through the update endpoint
+      // Status is automatically managed: 'available' if any copy is available, 'all_lent' if all are borrowed
+      // If availability_status is provided in the request, we ignore it
 
       await connection.commit();
       connection.release();

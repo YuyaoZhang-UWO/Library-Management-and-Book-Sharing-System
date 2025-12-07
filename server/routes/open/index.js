@@ -156,7 +156,8 @@ router.get('/books/:book_id', async (req, res) => {
     );
 
     // Set availability_status based on available copies
-    const availability_status = availableCopies.length > 0 ? 'available' : 'lent_out';
+    // If all copies are borrowed, show 'all_lent', otherwise 'available'
+    const availability_status = availableCopies.length > 0 ? 'available' : 'all_lent';
     const owner_info = availableCopies.length > 0 ? {
       owner_id: availableCopies[0].owner_id,
       owner_name: availableCopies[0].owner_name,

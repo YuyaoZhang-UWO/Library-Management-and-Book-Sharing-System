@@ -64,7 +64,7 @@ const updateBookSchema = Joi.object({
   isbn: isbnSchema,
   category: Joi.string().max(50).optional().allow(null, ''),
   conditions: Joi.string().max(50).optional().allow(null, ''),
-  availability_status: Joi.string().valid('available', 'lent_out', 'reserved').optional(),
+  // availability_status is read-only and computed from inventory table, not allowed in updates
 });
 
 const borrowBookSchema = Joi.object({

@@ -19,7 +19,6 @@ export default function AdminBooks({ token }) {
     isbn: '',
     category: '',
     conditions: '',
-    availability_status: 'available',
   });
 
   useEffect(() => {
@@ -79,7 +78,6 @@ export default function AdminBooks({ token }) {
       isbn: '',
       category: '',
       conditions: '',
-      availability_status: 'available',
     });
     setError('');
     setMessage('');
@@ -95,7 +93,7 @@ export default function AdminBooks({ token }) {
       isbn: book.isbn || '',
       category: book.category || '',
       conditions: book.conditions || '',
-      availability_status: book.availability_status || 'available',
+      // Note: availability_status is read-only and computed from inventory
     });
     setError('');
     setMessage('');
@@ -128,8 +126,7 @@ export default function AdminBooks({ token }) {
         author: formData.author.trim() || undefined,
         isbn: formData.isbn.trim() || undefined,
         category: formData.category.trim() || undefined,
-        conditions: formData.conditions.trim() || undefined,
-        availability_status: formData.availability_status || undefined,
+        conditions: formData.conditions.trim() || undefined
       };
 
       let res;
@@ -306,12 +303,12 @@ export default function AdminBooks({ token }) {
                   <td className="admin-books-status">
                     <span
                       className={
-                        book.availability_status === 'available'
+                        book.available_count > 0
                           ? 'admin-books-status-badge admin-books-status-available'
                           : 'admin-books-status-badge admin-books-status-lent'
                       }
                     >
-                      {book.availability_status}
+                      {book.available_count || 0} available
                     </span>
                   </td>
                   <td>{formatDate(book.created_at)}</td>
@@ -440,19 +437,6 @@ export default function AdminBooks({ token }) {
                 />
               </label>
 
-              <label className="admin-books-form-label">
-                <span className="admin-books-form-text">Status</span>
-                <select
-                  className="admin-books-form-input"
-                  value={formData.availability_status}
-                  onChange={(event) =>
-                    handleFormChange('availability_status', event.target.value)
-                  }
-                >
-                  <option value="available">available</option>
-                  <option value="lent_out">lent_out</option>
-                </select>
-              </label>
             </div>
 
             <div className="admin-books-form-actions">
