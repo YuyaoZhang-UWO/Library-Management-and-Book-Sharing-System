@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Recommendations.css';
 
-export default function Recommendations({ token }) {
+export default function Recommendations({ token, onViewBook }) {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,8 +58,10 @@ export default function Recommendations({ token }) {
   };
 
   const handleBorrow = (bookId) => {
-    // This would integrate with the borrow functionality
-    alert(`Borrow functionality for book ${bookId} - integrate with existing borrow logic`);
+    // Navigate to Borrow Books tab where user can see book details and borrow
+    if (onViewBook) {
+      onViewBook(bookId);
+    }
   };
 
   if (loading) {
