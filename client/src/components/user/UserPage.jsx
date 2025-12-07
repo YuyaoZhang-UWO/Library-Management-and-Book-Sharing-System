@@ -97,7 +97,7 @@ export default function UserPage({
       </aside>
 
       <main className="user-content">
-        {activeTab === 'recommendations' && <Recommendations token={token} user={user} />}
+        {activeTab === 'recommendations' && <Recommendations token={token} user={user} onViewBook={() => setActiveTab('borrow')} />}
 
         {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />}
 
