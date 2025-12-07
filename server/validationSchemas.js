@@ -50,6 +50,15 @@ const loginSchema = Joi.object({
   password: passwordSchema,
 });
 
+const signupSchema = Joi.object({
+  email: emailSchema,
+  username: Joi.string().min(3).max(50).required(),
+  first_name: Joi.string().max(100).optional().allow(null, ''),
+  last_name: Joi.string().max(100).optional().allow(null, ''),
+  password: passwordSchema,
+  date_of_birth: dateSchema,
+});
+
 const addBookSchema = Joi.object({
   title: titleSchema,
   author: authorSchema.optional(),
@@ -125,9 +134,11 @@ const removeFavoriteSchema = Joi.object({
 function validateInput(schema, data, res) {
   const { value, error } = schema.validate(data, { abortEarly: false });
   if (error) {
+    const errorMessage = error.details.map((d) => d.message).join('; ');
     res.status(400).json({
       status: 'error',
       message: 'Validation failed',
+      error: errorMessage, // For frontend compatibility
       details: error.details.map((d) => d.message),
     });
 
@@ -148,6 +159,7 @@ module.exports = {
   commentSchema,
   // Library management schema
   loginSchema,
+  signupSchema,
   addBookSchema,
   updateBookSchema,
   borrowBookSchema,

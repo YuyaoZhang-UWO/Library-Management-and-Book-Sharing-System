@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../../db/dbPool.js');
 const router = express.Router();
-const { validateInput, loginSchema } = require('../../validationSchemas');
+const { validateInput, loginSchema, signupSchema } = require('../../validationSchemas');
 const JWT_SECRET = process.env.JWT_SECRET || 'ECE9014';
 
 // Log in
@@ -58,6 +58,71 @@ router.post('/login', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Internal server error',
+    });
+  }
+});
+
+// Sign up
+router.post('/signup', async (req, res) => {
+  try {
+    const validatedData = validateInput(signupSchema, req.body, res);
+    if (!validatedData) return;
+
+    const { email, username, first_name, last_name, password, date_of_birth } = validatedData;
+
+    // Check if email already exists
+    const [emailExists] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (emailExists.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email already exists',
+        error: 'Email already exists', // For frontend compatibility
+      });
+    }
+
+    // Check if username already exists
+    const [usernameExists] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+    if (usernameExists.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Username already exists',
+        error: 'Username already exists', // For frontend compatibility
+      });
+    }
+
+    // Hash password
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    // Insert new user
+    const [result] = await db.query(
+      `INSERT INTO users (username, email, password_hash, fname, lname, date_of_birth, is_admin, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, NOW())`,
+      [
+        username,
+        email,
+        password_hash,
+        first_name || null,
+        last_name || null,
+        date_of_birth || null,
+      ]
+    );
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Account created successfully',
+      data: {
+        user_id: result.insertId,
+        email: email,
+        username: username,
+      },
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to create account',
+      error: 'Failed to create account', // For frontend compatibility
     });
   }
 });

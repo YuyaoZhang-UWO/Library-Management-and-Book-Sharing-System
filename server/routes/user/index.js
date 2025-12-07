@@ -29,7 +29,8 @@ router.get('/recommendations', async (req, res) => {
           user_id: userId,
           top_n: limit,
           exclude_borrowed: true
-        })
+        }),
+        signal: AbortSignal.timeout(2000)
       });
       
       if (mlResponse.ok) {
@@ -45,10 +46,16 @@ router.get('/recommendations', async (req, res) => {
         }
       }
     } catch (mlError) {
-      console.log('ML service unavailable, using fallback:', mlError.message);
+      // ML service is optional, silently use fallback
+      // Only log in development mode if needed
+      if (process.env.NODE_ENV === 'development') {
+        // Uncomment the line below if you want to see ML service status in development
+        // console.log('ML service unavailable, using fallback');
+      }
     }
     
     // Fallback to popularity-based recommendations if ML service is down
+    // Note: borrow_transactions now uses inventory_id, need to join with inventory to get book_id
     const [popularBooks] = await db.query(`
       SELECT 
         b.book_id,
@@ -61,20 +68,37 @@ router.get('/recommendations', async (req, res) => {
       FROM books b
       LEFT JOIN book_statistics bs ON b.book_id = bs.book_id
       WHERE b.book_id NOT IN (
-        SELECT DISTINCT book_id FROM borrow_transactions WHERE borrower_id = ?
+        SELECT DISTINCT i.book_id 
+        FROM borrow_transactions bt
+        JOIN inventory i ON bt.inventory_id = i.inventory_id
+        WHERE bt.borrower_id = ? AND bt.return_date IS NULL
       )
       AND b.book_id NOT IN (
-        SELECT DISTINCT book_id FROM reviews WHERE reviewer_id = ?
+        SELECT DISTINCT r.book_id 
+        FROM reviews r
+        WHERE r.reviewer_id = ?
+      )
+      AND b.book_id IN (
+        SELECT DISTINCT i.book_id 
+        FROM inventory i
+        WHERE i.status = 'available'
       )
       ORDER BY bs.times_borrowed DESC, bs.average_rating DESC
       LIMIT ?
     `, [userId, userId, limit]);
     
+    // Ensure numeric types for predicted_rating and popularity
+    const formattedBooks = popularBooks.map(book => ({
+      ...book,
+      predicted_rating: Number(book.predicted_rating) || 0,
+      popularity: Number(book.popularity) || 0
+    }));
+    
     return res.json({
       status: 'success',
-      data: popularBooks,
+      data: formattedBooks,
       source: 'fallback_popularity',
-      total: popularBooks.length
+      total: formattedBooks.length
     });
     
   } catch (error) {

@@ -21,7 +21,6 @@ router.get('/books/search', async (req, res) => {
         b.isbn,
         b.category,
         b.conditions,
-        'available' AS availability_status,
         i.owner_id,
         u.username AS owner_name,
         b.created_at,
@@ -56,6 +55,12 @@ router.get('/books/search', async (req, res) => {
 
     const [books] = await db.query(sqlQuery, queryParams);
 
+    // Format books to include available_count
+    const formattedBooks = books.map(book => ({
+      ...book,
+      available_count: parseInt(book.available_copies || 0),
+    }));
+
     // get total number of unique books with available copies
     let countQuery = `
       SELECT COUNT(DISTINCT b.book_id) as total 
@@ -87,7 +92,7 @@ router.get('/books/search', async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        books,
+        books: formattedBooks,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
