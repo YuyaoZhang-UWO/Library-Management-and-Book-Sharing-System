@@ -1,1 +1,26 @@
 # Record all AI tools and prompts that you used to create substantial amounts of code.
+
+# AI Usage Documentation
+1. Data Extraction Script (`extract_data.py`)
+AI Tool: Cursor AI
+Prompt Used:
+I need to extract data from my database to train an ML model for book recommendations. 
+Please create a python script that:
+- Connects to the MySQL database
+- Extracts reviews data with user_id, book_id, and rating
+- Exports to 3 CSV files: ratings.csv, users.csv, and books.csv
+- Handles database errors properly
+
+
+2. SVD Model Training Script (`train_model.py`)
+AI Tool: Cursor AI
+Prompt Used:
+Take a look at my train_model.py script, check that its weights and other configurations, as well as splits would match our data. If not, please improve it.
+
+
+3. Flask ML Microservice (`ml_service.py`)
+AI Tool: Cursor AI
+Prompt Used:
+I need to expose the ML to my backend web service. Please create a flask microservice and integrate that with the express.js backend such that a request can be made to the backend and it communicates with the flask microservice.
+
+
