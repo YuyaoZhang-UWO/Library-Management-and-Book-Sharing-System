@@ -14,6 +14,78 @@ const {
   removeFavoriteSchema,
 } = require('../../validationSchemas');
 
+// ML Recommendations endpoint
+router.get('/recommendations', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Call Flask ML service
+    try {
+      const mlResponse = await fetch('http://localhost:5001/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          top_n: limit,
+          exclude_borrowed: true
+        })
+      });
+      
+      if (mlResponse.ok) {
+        const mlData = await mlResponse.json();
+        
+        if (mlData.status === 'success') {
+          return res.json({
+            status: 'success',
+            data: mlData.recommendations,
+            source: 'ml_model',
+            total: mlData.total_predictions
+          });
+        }
+      }
+    } catch (mlError) {
+      console.log('ML service unavailable, using fallback:', mlError.message);
+    }
+    
+    // Fallback to popularity-based recommendations if ML service is down
+    const [popularBooks] = await db.query(`
+      SELECT 
+        b.book_id,
+        b.title,
+        b.author,
+        b.category,
+        b.isbn,
+        COALESCE(bs.average_rating, 0) as predicted_rating,
+        COALESCE(bs.times_borrowed, 0) as popularity
+      FROM books b
+      LEFT JOIN book_statistics bs ON b.book_id = bs.book_id
+      WHERE b.book_id NOT IN (
+        SELECT DISTINCT book_id FROM borrow_transactions WHERE borrower_id = ?
+      )
+      AND b.book_id NOT IN (
+        SELECT DISTINCT book_id FROM reviews WHERE reviewer_id = ?
+      )
+      ORDER BY bs.times_borrowed DESC, bs.average_rating DESC
+      LIMIT ?
+    `, [userId, userId, limit]);
+    
+    return res.json({
+      status: 'success',
+      data: popularBooks,
+      source: 'fallback_popularity',
+      total: popularBooks.length
+    });
+    
+  } catch (error) {
+    console.error('Recommendations error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get recommendations'
+    });
+  }
+});
+
 // Get current user's borrow records
 router.get('/borrows', async (req, res) => {
   try {
