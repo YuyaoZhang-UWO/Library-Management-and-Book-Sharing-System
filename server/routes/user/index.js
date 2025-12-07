@@ -101,7 +101,11 @@ router.get('/borrows', async (req, res) => {
         bt.borrow_date,
         bt.due_date,
         bt.return_date,
-        bt.status
+        bt.status,
+        CASE 
+          WHEN bt.return_date IS NULL THEN 'borrowed'
+          ELSE bt.status
+        END AS display_status
       FROM borrow_transactions bt
       JOIN inventory i ON bt.inventory_id = i.inventory_id
       JOIN books b ON i.book_id = b.book_id
@@ -110,9 +114,15 @@ router.get('/borrows', async (req, res) => {
       [userId]
     );
 
+    // Add computed status for backward compatibility with frontend
+    const formattedBorrows = borrows.map(borrow => ({
+      ...borrow,
+      status: borrow.display_status, // Use display_status for frontend compatibility
+    }));
+
     res.json({
       status: 'success',
-      data: borrows,
+      data: formattedBorrows,
     });
   } catch (error) {
     console.error('Get borrows error:', error);
@@ -169,10 +179,12 @@ router.post('/borrow', async (req, res) => {
       const inventoryItem = availableInventory[0];
 
       // check if the user has any unreturned books of the same book_id
+      // borrow_transactions.status can be 'returned' or 'overdue'
+      // If return_date IS NULL, the book is still borrowed
       const [existingBorrows] = await connection.query(
         `SELECT bt.* FROM borrow_transactions bt
          JOIN inventory i ON bt.inventory_id = i.inventory_id
-         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "borrowed"`,
+         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.return_date IS NULL`,
         [userId, book_id]
       );
 
@@ -206,9 +218,12 @@ router.post('/borrow', async (req, res) => {
       dueDate.setDate(dueDate.getDate() + 30);
 
       // create borrow record
+      // borrow_transactions.status can be 'returned' or 'overdue'
+      // Initially, status is NULL or will be set to 'overdue' by trigger if past due date
+      // We'll let the trigger/event handle the status update
       const [result] = await connection.query(
         `INSERT INTO borrow_transactions (inventory_id, borrower_id, borrow_date, due_date, status)
-         VALUES (?, ?, ?, ?, 'borrowed')`,
+         VALUES (?, ?, ?, ?, NULL)`,
         [inventoryItem.inventory_id, userId, borrowDate, dueDate]
       );
 
@@ -279,7 +294,8 @@ router.post('/return', async (req, res) => {
 
       const borrow = borrows[0];
 
-      if (borrow.status === 'returned') {
+      // Check if already returned (return_date IS NOT NULL or status = 'returned')
+      if (borrow.return_date !== null || borrow.status === 'returned') {
         await connection.rollback();
         connection.release();
         return res.status(400).json({
@@ -386,7 +402,8 @@ router.post('/renew', async (req, res) => {
 
       const borrow = borrows[0];
 
-      if (borrow.status !== 'borrowed') {
+      // Check if already returned (return_date IS NOT NULL or status = 'returned')
+      if (borrow.return_date !== null || borrow.status === 'returned') {
         await connection.rollback();
         connection.release();
         return res.status(400).json({
@@ -522,10 +539,12 @@ router.post('/waitlist', async (req, res) => {
       }
 
       // check if the user is currently borrowing this book
+      // borrow_transactions.status can be 'returned' or 'overdue'
+      // If return_date IS NULL, the book is still borrowed
       const [borrows] = await connection.query(
         `SELECT bt.* FROM borrow_transactions bt
          JOIN inventory i ON bt.inventory_id = i.inventory_id
-         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "borrowed"`,
+         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.return_date IS NULL`,
         [userId, book_id]
       );
 
@@ -719,10 +738,12 @@ router.post('/reviews', async (req, res) => {
     const { book_id, rating, comment } = validatedData;
 
     // check if the user has borrowed this book
+    // borrow_transactions.status can be 'returned' or 'overdue'
+    // Check if status is 'returned' or return_date IS NOT NULL
     const [borrows] = await db.query(
       `SELECT bt.* FROM borrow_transactions bt
        JOIN inventory i ON bt.inventory_id = i.inventory_id
-       WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "returned"`,
+       WHERE bt.borrower_id = ? AND i.book_id = ? AND (bt.status = 'returned' OR bt.return_date IS NOT NULL)`,
       [userId, book_id]
     );
 
@@ -1146,6 +1167,233 @@ router.get('/favorites/check/:book_id', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to check favorite status',
+    });
+  }
+});
+
+// Get user's own books (books they own in inventory)
+router.get('/my-books', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    
+    const [books] = await db.query(
+      `SELECT DISTINCT
+        b.book_id,
+        b.title,
+        b.author,
+        b.isbn,
+        b.category,
+        b.conditions,
+        b.created_at,
+        COUNT(DISTINCT i.inventory_id) as total_copies,
+        COUNT(DISTINCT CASE WHEN i.status = 'available' THEN i.inventory_id END) as available_copies,
+        CASE 
+          WHEN COUNT(DISTINCT CASE WHEN i.status = 'available' THEN i.inventory_id END) > 0 
+          THEN 'available' 
+          ELSE 'borrowed' 
+        END AS availability_status
+      FROM books b
+      INNER JOIN inventory i ON b.book_id = i.book_id
+      WHERE i.owner_id = ?
+      GROUP BY b.book_id, b.title, b.author, b.isbn, b.category, b.conditions, b.created_at
+      ORDER BY b.created_at DESC`,
+      [userId]
+    );
+
+    res.json({
+      status: 'success',
+      data: books,
+    });
+  } catch (error) {
+    console.error('Get my books error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get my books',
+    });
+  }
+});
+
+// Add a new book (create book and inventory entry)
+router.post('/my-books', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { title, author, isbn, category, conditions } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Title is required',
+      });
+    }
+
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Check if ISBN already exists
+      if (isbn && isbn.trim()) {
+        const [existingBooks] = await connection.query(
+          'SELECT * FROM books WHERE isbn = ?',
+          [isbn.trim()]
+        );
+
+        if (existingBooks.length > 0) {
+          await connection.rollback();
+          connection.release();
+          return res.status(400).json({
+            status: 'error',
+            message: 'The ISBN already exists',
+          });
+        }
+      }
+
+      // Insert into books table
+      const [bookResult] = await connection.query(
+        `INSERT INTO books (title, author, isbn, category, conditions, created_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [
+          title.trim(),
+          author && author.trim() ? author.trim() : null,
+          isbn && isbn.trim() ? isbn.trim() : null,
+          category && category.trim() ? category.trim() : null,
+          conditions && conditions.trim() ? conditions.trim() : null,
+        ]
+      );
+
+      const book_id = bookResult.insertId;
+
+      // Get the next copy number for this book
+      const [copyCount] = await connection.query(
+        'SELECT MAX(copy_number) as max_copy FROM inventory WHERE book_id = ?',
+        [book_id]
+      );
+      const nextCopyNumber = (copyCount[0].max_copy || 0) + 1;
+
+      // Insert into inventory table
+      await connection.query(
+        `INSERT INTO inventory (book_id, copy_number, owner_id, status, location)
+         VALUES (?, ?, ?, 'available', NULL)`,
+        [book_id, nextCopyNumber, userId]
+      );
+
+      // Initialize book_statistics
+      await connection.query(
+        `INSERT INTO book_statistics (book_id, times_borrowed, average_rating)
+         VALUES (?, 0, NULL)`,
+        [book_id]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Book added successfully',
+        data: {
+          book_id: book_id,
+        },
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Add my book error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to add book',
+    });
+  }
+});
+
+// Delete a book (delete inventory entry, and book if no more copies)
+router.delete('/my-books/:book_id', async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const book_id = parseInt(req.params.book_id);
+
+    if (!book_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid book_id',
+      });
+    }
+
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Check if user owns any copies of this book
+      const [inventory] = await connection.query(
+        'SELECT * FROM inventory WHERE book_id = ? AND owner_id = ?',
+        [book_id, userId]
+      );
+
+      if (inventory.length === 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(404).json({
+          status: 'error',
+          message: 'You do not own any copies of this book',
+        });
+      }
+
+      // Check if any copies are currently borrowed
+      const [activeBorrows] = await connection.query(
+        `SELECT COUNT(*) as count 
+         FROM borrow_transactions bt
+         WHERE bt.inventory_id IN (
+           SELECT inventory_id FROM inventory 
+           WHERE book_id = ? AND owner_id = ?
+         ) AND bt.return_date IS NULL`,
+        [book_id, userId]
+      );
+
+      if (activeBorrows[0].count > 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(400).json({
+          status: 'error',
+          message: 'Cannot delete book with active borrow records',
+        });
+      }
+
+      // Delete all inventory copies owned by this user
+      await connection.query(
+        'DELETE FROM inventory WHERE book_id = ? AND owner_id = ?',
+        [book_id, userId]
+      );
+
+      // Check if there are any other copies of this book
+      const [remainingCopies] = await connection.query(
+        'SELECT COUNT(*) as count FROM inventory WHERE book_id = ?',
+        [book_id]
+      );
+
+      // If no more copies exist, delete the book and statistics
+      if (remainingCopies[0].count === 0) {
+        await connection.query('DELETE FROM book_statistics WHERE book_id = ?', [book_id]);
+        await connection.query('DELETE FROM books WHERE book_id = ?', [book_id]);
+      }
+
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        status: 'success',
+        message: 'Book deleted successfully',
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Delete my book error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete book',
     });
   }
 });

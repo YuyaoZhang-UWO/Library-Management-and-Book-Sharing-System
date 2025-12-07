@@ -282,71 +282,138 @@ router.put('/books/:book_id', async (req, res) => {
     const validatedData = validateInput(updateBookSchema, req.body, res);
     if (!validatedData) return;
 
-    // check if the book exists
-    const [books] = await db.query('SELECT * FROM books WHERE book_id = ?', [
-      book_id,
-    ]);
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
-    if (books.length === 0) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'The book does not exist',
-      });
-    }
+    try {
+      // check if the book exists
+      const [books] = await connection.query('SELECT * FROM books WHERE book_id = ?', [
+        book_id,
+      ]);
 
-    // if update ISBN, check if it conflicts with other books
-    if (validatedData.isbn) {
-      const [existingBooks] = await db.query(
-        'SELECT * FROM books WHERE isbn = ? AND book_id != ?',
-        [validatedData.isbn, book_id],
-      );
-
-      if (existingBooks.length > 0) {
-        return res.status(400).json({
+      if (books.length === 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(404).json({
           status: 'error',
-          message: 'The ISBN is already in use',
+          message: 'The book does not exist',
         });
       }
-    }
 
-    // build update fields
-    const updateFields = [];
-    const updateValues = [];
+      // if update ISBN, check if it conflicts with other books
+      if (validatedData.isbn) {
+        const [existingBooks] = await connection.query(
+          'SELECT * FROM books WHERE isbn = ? AND book_id != ?',
+          [validatedData.isbn, book_id],
+        );
 
-    if (validatedData.title !== undefined) {
-      updateFields.push('title = ?');
-      updateValues.push(validatedData.title);
-    }
-    if (validatedData.author !== undefined) {
-      updateFields.push('author = ?');
-      updateValues.push(validatedData.author);
-    }
-    if (validatedData.isbn !== undefined) {
-      updateFields.push('isbn = ?');
-      updateValues.push(validatedData.isbn || null);
-    }
-    if (validatedData.category !== undefined) {
-      updateFields.push('category = ?');
-      updateValues.push(validatedData.category || null);
-    }
-    if (validatedData.conditions !== undefined) {
-      updateFields.push('conditions = ?');
-      updateValues.push(validatedData.conditions || null);
-    }
-    // Note: availability_status is now managed through inventory table, not books table
-    // If needed, we can update inventory status separately
+        if (existingBooks.length > 0) {
+          await connection.rollback();
+          connection.release();
+          return res.status(400).json({
+            status: 'error',
+            message: 'The ISBN is already in use',
+          });
+        }
+      }
 
-    updateValues.push(book_id);
+      // build update fields for books table
+      const updateFields = [];
+      const updateValues = [];
 
-    await db.query(
-      `UPDATE books SET ${updateFields.join(', ')} WHERE book_id = ?`,
-      updateValues,
-    );
+      // Handle each field
+      // title is required in database, so if provided and not empty, update it
+      if (validatedData.title !== undefined) {
+        const trimmedTitle = typeof validatedData.title === 'string' ? validatedData.title.trim() : validatedData.title;
+        if (trimmedTitle === '') {
+          // If title is empty string, reject the update
+          await connection.rollback();
+          connection.release();
+          return res.status(400).json({
+            status: 'error',
+            message: 'Title cannot be empty',
+          });
+        }
+        updateFields.push('title = ?');
+        updateValues.push(trimmedTitle);
+      }
 
-    res.json({
-      status: 'success',
-      message: 'Update book successfully',
-    });
+      // author is optional, can be null
+      if (validatedData.author !== undefined) {
+        const trimmedAuthor = typeof validatedData.author === 'string' ? validatedData.author.trim() : validatedData.author;
+        updateFields.push('author = ?');
+        updateValues.push(trimmedAuthor || null);
+      }
+
+      // isbn is optional, can be null
+      if (validatedData.isbn !== undefined) {
+        const trimmedIsbn = typeof validatedData.isbn === 'string' ? validatedData.isbn.trim() : validatedData.isbn;
+        updateFields.push('isbn = ?');
+        updateValues.push(trimmedIsbn || null);
+      }
+
+      // category is optional, can be null
+      if (validatedData.category !== undefined) {
+        const trimmedCategory = typeof validatedData.category === 'string' ? validatedData.category.trim() : validatedData.category;
+        updateFields.push('category = ?');
+        updateValues.push(trimmedCategory || null);
+      }
+
+      // conditions is optional, can be null
+      if (validatedData.conditions !== undefined) {
+        const trimmedConditions = typeof validatedData.conditions === 'string' ? validatedData.conditions.trim() : validatedData.conditions;
+        updateFields.push('conditions = ?');
+        updateValues.push(trimmedConditions || null);
+      }
+
+      // Update books table if there are fields to update
+      if (updateFields.length > 0) {
+        updateValues.push(book_id);
+        await connection.query(
+          `UPDATE books SET ${updateFields.join(', ')} WHERE book_id = ?`,
+          updateValues,
+        );
+      }
+
+      // Handle availability_status through inventory table
+      // Note: availability_status is now managed through inventory table
+      // If availability_status is provided, we can update non-borrowed inventory items
+      if (validatedData.availability_status !== undefined) {
+        const newStatus = validatedData.availability_status;
+        
+        if (newStatus === 'available' || newStatus === 'reserved') {
+          // Set all non-borrowed inventory items to the new status
+          // Only update items that are not currently borrowed
+          // Use LEFT JOIN to find items without active borrow transactions
+          // borrow_transactions.status can be 'returned' or 'overdue'
+          // If return_date IS NULL, the book is still borrowed
+          await connection.query(
+            `UPDATE inventory i
+             LEFT JOIN borrow_transactions bt ON i.inventory_id = bt.inventory_id 
+               AND bt.return_date IS NULL
+             SET i.status = ?
+             WHERE i.book_id = ? 
+             AND i.status != 'borrowed'
+             AND bt.transaction_id IS NULL`,
+            [newStatus, book_id]
+          );
+        }
+        // If availability_status is 'lent_out', it means all copies are borrowed
+        // This is automatically managed by the system through triggers, no need to update
+      }
+
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        status: 'success',
+        message: 'Update book successfully',
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
   } catch (error) {
     console.error('Update book error:', error);
     res.status(500).json({
@@ -381,11 +448,13 @@ router.delete('/books/:book_id', async (req, res) => {
     }
 
     // Check if there are any active borrow records
+    // borrow_transactions.status can be 'returned' or 'overdue'
+    // If return_date IS NULL, the book is still borrowed
     const [activeBorrows] = await db.query(
       `SELECT COUNT(*) as count 
        FROM borrow_transactions bt
        JOIN inventory i ON bt.inventory_id = i.inventory_id
-       WHERE i.book_id = ? AND bt.status = 'borrowed'`,
+       WHERE i.book_id = ? AND bt.return_date IS NULL`,
       [book_id]
     );
 
@@ -437,7 +506,11 @@ router.get('/borrows', async (req, res) => {
         bt.borrow_date,
         bt.due_date,
         bt.return_date,
-        bt.status
+        bt.status,
+        CASE 
+          WHEN bt.return_date IS NULL THEN 'borrowed'
+          ELSE bt.status
+        END AS display_status
       FROM borrow_transactions bt
       JOIN inventory i ON bt.inventory_id = i.inventory_id
       JOIN books b ON i.book_id = b.book_id
@@ -448,8 +521,13 @@ router.get('/borrows', async (req, res) => {
     const queryParams = [];
 
     if (status) {
-      query += ` AND bt.status = ?`;
-      queryParams.push(status);
+      // Handle status filter: 'borrowed' means return_date IS NULL
+      if (status === 'borrowed') {
+        query += ` AND bt.return_date IS NULL`;
+      } else {
+        query += ` AND bt.status = ?`;
+        queryParams.push(status);
+      }
     }
 
     if (borrower_id) {
@@ -467,6 +545,12 @@ router.get('/borrows', async (req, res) => {
 
     const [borrows] = await db.query(query, queryParams);
 
+    // Format borrows to use display_status for frontend compatibility
+    const formattedBorrows = borrows.map(borrow => ({
+      ...borrow,
+      status: borrow.display_status, // Use display_status for frontend
+    }));
+
     // get total number of borrows
     let countQuery = `
       SELECT COUNT(*) as total
@@ -477,8 +561,13 @@ router.get('/borrows', async (req, res) => {
     const countParams = [];
 
     if (status) {
-      countQuery += ` AND bt.status = ?`;
-      countParams.push(status);
+      // Handle status filter: 'borrowed' means return_date IS NULL
+      if (status === 'borrowed') {
+        countQuery += ` AND bt.return_date IS NULL`;
+      } else {
+        countQuery += ` AND bt.status = ?`;
+        countParams.push(status);
+      }
     }
 
     if (borrower_id) {
@@ -497,7 +586,7 @@ router.get('/borrows', async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        borrows,
+        borrows: formattedBorrows,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -811,8 +900,10 @@ router.get('/statistics', async (req, res) => {
     const [userCount] = await db.query('SELECT COUNT(*) as total FROM users');
 
     // active borrow count
+    // borrow_transactions.status can be 'returned' or 'overdue'
+    // If return_date IS NULL, the book is still borrowed
     const [activeBorrows] = await db.query(
-      "SELECT COUNT(*) as total FROM borrow_transactions WHERE status = 'borrowed'",
+      "SELECT COUNT(*) as total FROM borrow_transactions WHERE return_date IS NULL",
     );
 
     // pending waitlist count
