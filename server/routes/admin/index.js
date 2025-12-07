@@ -22,12 +22,11 @@ router.get('/books', async (req, res) => {
         b.isbn,
         b.category,
         b.conditions,
-        b.owner_id,
-        u.username AS owner_name,
-        b.availability_status,
-        b.created_at
+        b.created_at,
+        COUNT(DISTINCT i.inventory_id) as total_copies,
+        COUNT(DISTINCT CASE WHEN i.status = 'available' THEN i.inventory_id END) as available_copies
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
+      LEFT JOIN inventory i ON b.book_id = i.book_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -38,6 +37,7 @@ router.get('/books', async (req, res) => {
       queryParams.push(searchPattern, searchPattern, searchPattern);
     }
 
+    query += ` GROUP BY b.book_id, b.title, b.author, b.isbn, b.category, b.conditions, b.created_at`;
     query += ` ORDER BY b.created_at DESC LIMIT ? OFFSET ?`;
     queryParams.push(parseInt(limit), offset);
 
@@ -331,11 +331,11 @@ router.get('/borrows', async (req, res) => {
         bt.borrower_id,
         u.username AS borrower_name,
         u.email AS borrower_email,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author,
         b.isbn,
-        b.owner_id,
+        i.owner_id,
         ou.username AS owner_name,
         bt.borrow_date,
         bt.due_date,
@@ -343,8 +343,9 @@ router.get('/borrows', async (req, res) => {
         bt.status
       FROM borrow_transactions bt
       JOIN users u ON bt.borrower_id = u.user_id
-      JOIN books b ON bt.book_id = b.book_id
-      JOIN users ou ON b.owner_id = ou.user_id
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
+      JOIN books b ON i.book_id = b.book_id
+      JOIN users ou ON i.owner_id = ou.user_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -360,7 +361,7 @@ router.get('/borrows', async (req, res) => {
     }
 
     if (book_id) {
-      query += ` AND bt.book_id = ?`;
+      query += ` AND i.book_id = ?`;
       queryParams.push(parseInt(book_id));
     }
 
@@ -373,6 +374,7 @@ router.get('/borrows', async (req, res) => {
     let countQuery = `
       SELECT COUNT(*) as total
       FROM borrow_transactions bt
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
       WHERE 1=1
     `;
     const countParams = [];
@@ -388,7 +390,7 @@ router.get('/borrows', async (req, res) => {
     }
 
     if (book_id) {
-      countQuery += ` AND bt.book_id = ?`;
+      countQuery += ` AND i.book_id = ?`;
       countParams.push(parseInt(book_id));
     }
 
@@ -498,13 +500,14 @@ router.get('/fines', async (req, res) => {
         f.paid,
         f.issued_at,
         f.paid_at,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author
       FROM fines f
       JOIN users u ON f.user_id = u.user_id
       LEFT JOIN borrow_transactions bt ON f.transaction_id = bt.transaction_id
-      LEFT JOIN books b ON bt.book_id = b.book_id
+      LEFT JOIN inventory i ON bt.inventory_id = i.inventory_id
+      LEFT JOIN books b ON i.book_id = b.book_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -698,6 +701,9 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Analytics routes
+router.use('/analytics', require('./analytics'));
+
 // Get statistics
 router.get('/statistics', async (req, res) => {
   try {
@@ -737,7 +743,8 @@ router.get('/statistics', async (req, res) => {
         b.category,
         COUNT(*) as borrow_times
       FROM borrow_transactions bt
-      JOIN books b ON bt.book_id = b.book_id
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
+      JOIN books b ON i.book_id = b.book_id
       GROUP BY b.category
       ORDER BY borrow_times DESC
       LIMIT 10`,
