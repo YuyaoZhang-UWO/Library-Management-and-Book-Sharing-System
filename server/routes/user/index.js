@@ -21,7 +21,7 @@ router.get('/borrows', async (req, res) => {
     const [borrows] = await db.query(
       `SELECT 
         bt.transaction_id,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author,
         b.isbn,
@@ -31,7 +31,8 @@ router.get('/borrows', async (req, res) => {
         bt.return_date,
         bt.status
       FROM borrow_transactions bt
-      JOIN books b ON bt.book_id = b.book_id
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
+      JOIN books b ON i.book_id = b.book_id
       WHERE bt.borrower_id = ?
       ORDER BY bt.borrow_date DESC`,
       [userId]
@@ -63,9 +64,9 @@ router.post('/borrow', async (req, res) => {
     await connection.beginTransaction();
 
     try {
-      // check if the book exists and is available
+      // check if the book exists
       const [books] = await connection.query(
-        'SELECT * FROM books WHERE book_id = ? FOR UPDATE',
+        'SELECT * FROM books WHERE book_id = ?',
         [book_id]
       );
 
@@ -78,10 +79,13 @@ router.post('/borrow', async (req, res) => {
         });
       }
 
-      const book = books[0];
+      // find an available inventory copy
+      const [availableInventory] = await connection.query(
+        'SELECT * FROM inventory WHERE book_id = ? AND status = ? FOR UPDATE',
+        [book_id, 'available']
+      );
 
-      // check if the book is available
-      if (book.availability_status !== 'available') {
+      if (availableInventory.length === 0) {
         await connection.rollback();
         connection.release();
         return res.status(400).json({
@@ -90,9 +94,13 @@ router.post('/borrow', async (req, res) => {
         });
       }
 
-      // check if the user has any unreturned books
+      const inventoryItem = availableInventory[0];
+
+      // check if the user has any unreturned books of the same book_id
       const [existingBorrows] = await connection.query(
-        'SELECT * FROM borrow_transactions WHERE borrower_id = ? AND book_id = ? AND status = "borrowed"',
+        `SELECT bt.* FROM borrow_transactions bt
+         JOIN inventory i ON bt.inventory_id = i.inventory_id
+         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "borrowed"`,
         [userId, book_id]
       );
 
@@ -127,18 +135,12 @@ router.post('/borrow', async (req, res) => {
 
       // create borrow record
       const [result] = await connection.query(
-        `INSERT INTO borrow_transactions (borrower_id, book_id, borrow_date, due_date, status)
+        `INSERT INTO borrow_transactions (inventory_id, borrower_id, borrow_date, due_date, status)
          VALUES (?, ?, ?, ?, 'borrowed')`,
-        [userId, book_id, borrowDate, dueDate]
+        [inventoryItem.inventory_id, userId, borrowDate, dueDate]
       );
 
-      // update book status
-      await connection.query(
-        "UPDATE books SET availability_status = 'lent_out' WHERE book_id = ?",
-        [book_id]
-      );
-
-      // update book_statistics
+      // update book_statistics (trigger will handle inventory status update)
       await connection.query(
         `INSERT INTO book_statistics (book_id, times_borrowed)
          VALUES (?, 1)
@@ -187,7 +189,10 @@ router.post('/return', async (req, res) => {
     try {
       // check if the borrow record exists and belongs to the current user
       const [borrows] = await connection.query(
-        'SELECT * FROM borrow_transactions WHERE transaction_id = ? AND borrower_id = ? FOR UPDATE',
+        `SELECT bt.*, i.book_id 
+         FROM borrow_transactions bt
+         JOIN inventory i ON bt.inventory_id = i.inventory_id
+         WHERE bt.transaction_id = ? AND bt.borrower_id = ? FOR UPDATE`,
         [transaction_id, userId]
       );
 
@@ -220,12 +225,6 @@ router.post('/return', async (req, res) => {
          SET return_date = ?, status = 'returned' 
          WHERE transaction_id = ?`,
         [returnDate, transaction_id]
-      );
-
-      // update book status
-      await connection.query(
-        "UPDATE books SET availability_status = 'available' WHERE book_id = ?",
-        [borrow.book_id]
       );
 
       // if overdue, create fine record
@@ -297,7 +296,10 @@ router.post('/renew', async (req, res) => {
     try {
       // check if the borrow record exists and belongs to the current user
       const [borrows] = await connection.query(
-        'SELECT * FROM borrow_transactions WHERE transaction_id = ? AND borrower_id = ? FOR UPDATE',
+        `SELECT bt.*, i.book_id 
+         FROM borrow_transactions bt
+         JOIN inventory i ON bt.inventory_id = i.inventory_id
+         WHERE bt.transaction_id = ? AND bt.borrower_id = ? FOR UPDATE`,
         [transaction_id, userId]
       );
 
@@ -449,7 +451,9 @@ router.post('/waitlist', async (req, res) => {
 
       // check if the user is currently borrowing this book
       const [borrows] = await connection.query(
-        'SELECT * FROM borrow_transactions WHERE borrower_id = ? AND book_id = ? AND status = "borrowed"',
+        `SELECT bt.* FROM borrow_transactions bt
+         JOIN inventory i ON bt.inventory_id = i.inventory_id
+         WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "borrowed"`,
         [userId, book_id]
       );
 
@@ -541,12 +545,13 @@ router.get('/fines', async (req, res) => {
         f.paid,
         f.issued_at,
         f.paid_at,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author
       FROM fines f
       LEFT JOIN borrow_transactions bt ON f.transaction_id = bt.transaction_id
-      LEFT JOIN books b ON bt.book_id = b.book_id
+      LEFT JOIN inventory i ON bt.inventory_id = i.inventory_id
+      LEFT JOIN books b ON i.book_id = b.book_id
       WHERE f.user_id = ?
       ORDER BY f.issued_at DESC`,
       [userId]
@@ -643,7 +648,9 @@ router.post('/reviews', async (req, res) => {
 
     // check if the user has borrowed this book
     const [borrows] = await db.query(
-      'SELECT * FROM borrow_transactions WHERE borrower_id = ? AND book_id = ? AND status = "returned"',
+      `SELECT bt.* FROM borrow_transactions bt
+       JOIN inventory i ON bt.inventory_id = i.inventory_id
+       WHERE bt.borrower_id = ? AND i.book_id = ? AND bt.status = "returned"`,
       [userId, book_id]
     );
 

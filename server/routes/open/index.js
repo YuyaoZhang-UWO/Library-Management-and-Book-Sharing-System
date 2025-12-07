@@ -12,21 +12,24 @@ router.get('/books/search', async (req, res) => {
     const { query, category, author, page = 1, limit = 20 } = validatedData;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
+    // Find books that have at least one available copy
     let sqlQuery = `
-      SELECT 
+      SELECT DISTINCT
         b.book_id,
         b.title,
         b.author,
         b.isbn,
         b.category,
         b.conditions,
-        b.availability_status,
-        b.owner_id,
+        'available' AS availability_status,
+        i.owner_id,
         u.username AS owner_name,
-        b.created_at
+        b.created_at,
+        COUNT(DISTINCT i.inventory_id) AS available_copies
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
-      WHERE b.availability_status = 'available'
+      INNER JOIN inventory i ON b.book_id = i.book_id
+      INNER JOIN users u ON i.owner_id = u.user_id
+      WHERE i.status = 'available'
     `;
     const queryParams = [];
 
@@ -47,16 +50,18 @@ router.get('/books/search', async (req, res) => {
       queryParams.push(`%${author}%`);
     }
 
+    sqlQuery += ` GROUP BY b.book_id, b.title, b.author, b.isbn, b.category, b.conditions, i.owner_id, u.username, b.created_at`;
     sqlQuery += ` ORDER BY b.created_at DESC LIMIT ? OFFSET ?`;
     queryParams.push(parseInt(limit), offset);
 
     const [books] = await db.query(sqlQuery, queryParams);
 
-    // get total number of books
+    // get total number of unique books with available copies
     let countQuery = `
-      SELECT COUNT(*) as total 
+      SELECT COUNT(DISTINCT b.book_id) as total 
       FROM books b
-      WHERE b.availability_status = 'available'
+      INNER JOIN inventory i ON b.book_id = i.book_id
+      WHERE i.status = 'available'
     `;
     const countParams = [];
 
@@ -120,12 +125,8 @@ router.get('/books/:book_id', async (req, res) => {
         b.isbn,
         b.category,
         b.conditions,
-        b.availability_status,
-        b.owner_id,
-        u.username AS owner_name,
         b.created_at
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
       WHERE b.book_id = ?`,
       [book_id]
     );
@@ -138,6 +139,28 @@ router.get('/books/:book_id', async (req, res) => {
     }
 
     const book = books[0];
+
+    // Check if there are any available copies
+    const [availableCopies] = await db.query(
+      `SELECT 
+        i.inventory_id,
+        i.owner_id,
+        u.username AS owner_name,
+        i.status,
+        i.location
+      FROM inventory i
+      JOIN users u ON i.owner_id = u.user_id
+      WHERE i.book_id = ? AND i.status = 'available'
+      LIMIT 1`,
+      [book_id]
+    );
+
+    // Set availability_status based on available copies
+    const availability_status = availableCopies.length > 0 ? 'available' : 'lent_out';
+    const owner_info = availableCopies.length > 0 ? {
+      owner_id: availableCopies[0].owner_id,
+      owner_name: availableCopies[0].owner_name,
+    } : {};
 
     // get average rating and statistics
     const [stats] = await db.query(
@@ -173,6 +196,8 @@ router.get('/books/:book_id', async (req, res) => {
       status: 'success',
       data: {
         ...book,
+        ...owner_info,
+        availability_status,
         statistics: stats[0] || {
           times_borrowed: 0,
           average_rating: null,
@@ -199,18 +224,19 @@ router.get('/books/popular', async (req, res) => {
     const { limit = 10 } = req.query;
 
     const [books] = await db.query(
-      `SELECT 
+      `SELECT DISTINCT
         b.book_id,
         b.title,
         b.author,
         b.isbn,
         b.category,
-        b.availability_status,
+        'available' AS availability_status,
         bs.times_borrowed,
         bs.average_rating
       FROM books b
+      INNER JOIN inventory i ON b.book_id = i.book_id
       LEFT JOIN book_statistics bs ON b.book_id = bs.book_id
-      WHERE b.availability_status = 'available'
+      WHERE i.status = 'available'
       ORDER BY bs.times_borrowed DESC, bs.average_rating DESC
       LIMIT ?`,
       [parseInt(limit)]
@@ -239,19 +265,21 @@ router.get('/books/recent', async (req, res) => {
     const { limit = 10 } = req.query;
 
     const [books] = await db.query(
-      `SELECT 
+      `SELECT DISTINCT
         b.book_id,
         b.title,
         b.author,
         b.isbn,
         b.category,
         b.conditions,
-        b.availability_status,
+        'available' AS availability_status,
+        i.owner_id,
         u.username AS owner_name,
         b.created_at
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
-      WHERE b.availability_status = 'available'
+      INNER JOIN inventory i ON b.book_id = i.book_id
+      INNER JOIN users u ON i.owner_id = u.user_id
+      WHERE i.status = 'available'
       ORDER BY b.created_at DESC
       LIMIT ?`,
       [parseInt(limit)]
@@ -275,11 +303,12 @@ router.get('/categories', async (req, res) => {
   try {
     const [categories] = await db.query(
       `SELECT 
-        category,
-        COUNT(*) as book_count
-      FROM books
-      WHERE category IS NOT NULL AND category != '' AND availability_status = 'available'
-      GROUP BY category
+        b.category,
+        COUNT(DISTINCT b.book_id) as book_count
+      FROM books b
+      INNER JOIN inventory i ON b.book_id = i.book_id
+      WHERE b.category IS NOT NULL AND b.category != '' AND i.status = 'available'
+      GROUP BY b.category
       ORDER BY book_count DESC`
     );
 

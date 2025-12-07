@@ -22,12 +22,14 @@ router.get('/books', async (req, res) => {
         b.isbn,
         b.category,
         b.conditions,
-        b.owner_id,
-        u.username AS owner_name,
-        b.availability_status,
-        b.created_at
+        b.created_at,
+        COUNT(DISTINCT i.inventory_id) as total_copies,
+        COUNT(DISTINCT CASE WHEN i.status = 'available' THEN i.inventory_id END) as available_copies,
+        MAX(CASE WHEN i.status = 'available' THEN i.owner_id END) as owner_id,
+        MAX(CASE WHEN i.status = 'available' THEN u.username END) as owner_name
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
+      LEFT JOIN inventory i ON b.book_id = i.book_id
+      LEFT JOIN users u ON i.owner_id = u.user_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -38,13 +40,32 @@ router.get('/books', async (req, res) => {
       queryParams.push(searchPattern, searchPattern, searchPattern);
     }
 
+    query += ` GROUP BY b.book_id, b.title, b.author, b.isbn, b.category, b.conditions, b.created_at`;
     query += ` ORDER BY b.created_at DESC LIMIT ? OFFSET ?`;
     queryParams.push(parseInt(limit), offset);
 
     const [books] = await db.query(query, queryParams);
 
+    // Format the response to match the old structure
+    const formattedBooks = books.map(book => {
+      const availability_status = book.available_copies > 0 ? 'available' : 'lent_out';
+      
+      return {
+        book_id: book.book_id,
+        title: book.title,
+        author: book.author,
+        isbn: book.isbn,
+        category: book.category,
+        conditions: book.conditions,
+        owner_id: book.owner_id,
+        owner_name: book.owner_name,
+        availability_status: availability_status,
+        created_at: book.created_at,
+      };
+    });
+
     // get total number of books
-    let countQuery = 'SELECT COUNT(*) as total FROM books WHERE 1=1';
+    let countQuery = 'SELECT COUNT(DISTINCT book_id) as total FROM books WHERE 1=1';
     const countParams = [];
     if (search) {
       countQuery += ` AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)`;
@@ -57,7 +78,7 @@ router.get('/books', async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        books,
+        books: formattedBooks,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -95,12 +116,8 @@ router.get('/books/:book_id', async (req, res) => {
         b.isbn,
         b.category,
         b.conditions,
-        b.owner_id,
-        u.username AS owner_name,
-        b.availability_status,
         b.created_at
       FROM books b
-      JOIN users u ON b.owner_id = u.user_id
       WHERE b.book_id = ?`,
       [book_id],
     );
@@ -112,9 +129,42 @@ router.get('/books/:book_id', async (req, res) => {
       });
     }
 
+    const book = books[0];
+
+    // Get inventory information
+    const [inventory] = await db.query(
+      `SELECT 
+        i.inventory_id,
+        i.owner_id,
+        u.username AS owner_name,
+        i.status,
+        i.location,
+        i.copy_number
+      FROM inventory i
+      JOIN users u ON i.owner_id = u.user_id
+      WHERE i.book_id = ?
+      ORDER BY i.copy_number`,
+      [book_id]
+    );
+
+    // Determine availability status
+    const hasAvailable = inventory.some(inv => inv.status === 'available');
+    const availability_status = hasAvailable ? 'available' : 'lent_out';
+    
+    // Get first available owner info for backward compatibility
+    const firstAvailable = inventory.find(inv => inv.status === 'available');
+    const owner_id = firstAvailable ? firstAvailable.owner_id : (inventory.length > 0 ? inventory[0].owner_id : null);
+    const owner_name = firstAvailable ? firstAvailable.owner_name : (inventory.length > 0 ? inventory[0].owner_name : null);
+
     res.json({
       status: 'success',
-      data: books[0],
+      data: {
+        ...book,
+        owner_id,
+        owner_name,
+        availability_status,
+        inventory: inventory,
+      },
     });
   } catch (error) {
     console.error('Get book error:', error);
@@ -134,42 +184,80 @@ router.post('/books', async (req, res) => {
     const { title, author, isbn, category, conditions } = validatedData;
     const owner_id = req.body.owner_id || req.user.user_id; // default is the admin himself
 
-    // check if ISBN already exists
-    if (isbn) {
-      const [existingBooks] = await db.query(
-        'SELECT * FROM books WHERE isbn = ?',
-        [isbn],
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // check if ISBN already exists
+      if (isbn) {
+        const [existingBooks] = await connection.query(
+          'SELECT * FROM books WHERE isbn = ?',
+          [isbn],
+        );
+
+        if (existingBooks.length > 0) {
+          await connection.rollback();
+          connection.release();
+          return res.status(400).json({
+            status: 'error',
+            message: 'The ISBN already exists',
+          });
+        }
+      }
+
+      // Insert into books table
+      const [bookResult] = await connection.query(
+        `INSERT INTO books 
+         (title, author, isbn, category, conditions, created_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [
+          title,
+          author || null,
+          isbn || null,
+          category || null,
+          conditions || null,
+        ],
       );
 
-      if (existingBooks.length > 0) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'The ISBN already exists',
-        });
-      }
+      const book_id = bookResult.insertId;
+
+      // Get the next copy number for this book
+      const [copyCount] = await connection.query(
+        'SELECT MAX(copy_number) as max_copy FROM inventory WHERE book_id = ?',
+        [book_id]
+      );
+      const nextCopyNumber = (copyCount[0].max_copy || 0) + 1;
+
+      // Insert into inventory table
+      await connection.query(
+        `INSERT INTO inventory 
+         (book_id, copy_number, owner_id, status, location)
+         VALUES (?, ?, ?, 'available', NULL)`,
+        [book_id, nextCopyNumber, owner_id]
+      );
+
+      // Initialize book_statistics
+      await connection.query(
+        `INSERT INTO book_statistics (book_id, times_borrowed, average_rating)
+         VALUES (?, 0, NULL)`,
+        [book_id]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Add book successfully',
+        data: {
+          book_id: book_id,
+        },
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
     }
-
-    const [result] = await db.query(
-      `INSERT INTO books 
-       (title, author, isbn, category, conditions, owner_id, availability_status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'available', NOW())`,
-      [
-        title,
-        author || null,
-        isbn || null,
-        category || null,
-        conditions || null,
-        owner_id,
-      ],
-    );
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Add book successfully',
-      data: {
-        book_id: result.insertId,
-      },
-    });
   } catch (error) {
     console.error('Add book error:', error);
     res.status(500).json({
@@ -245,10 +333,8 @@ router.put('/books/:book_id', async (req, res) => {
       updateFields.push('conditions = ?');
       updateValues.push(validatedData.conditions || null);
     }
-    if (validatedData.availability_status !== undefined) {
-      updateFields.push('availability_status = ?');
-      updateValues.push(validatedData.availability_status);
-    }
+    // Note: availability_status is now managed through inventory table, not books table
+    // If needed, we can update inventory status separately
 
     updateValues.push(book_id);
 
@@ -294,16 +380,27 @@ router.delete('/books/:book_id', async (req, res) => {
       });
     }
 
-    const book = books[0];
+    // Check if there are any active borrow records
+    const [activeBorrows] = await db.query(
+      `SELECT COUNT(*) as count 
+       FROM borrow_transactions bt
+       JOIN inventory i ON bt.inventory_id = i.inventory_id
+       WHERE i.book_id = ? AND bt.status = 'borrowed'`,
+      [book_id]
+    );
 
-    // if there are any borrowed records, cannot delete
-    if (book.availability_status === 'lent_out') {
+    if (activeBorrows[0].count > 0) {
       return res.status(400).json({
         status: 'error',
         message: 'The book has borrowed records, cannot delete',
       });
     }
 
+    // Delete inventory records first (due to foreign key constraint)
+    await db.query('DELETE FROM inventory WHERE book_id = ?', [book_id]);
+    // Delete book statistics
+    await db.query('DELETE FROM book_statistics WHERE book_id = ?', [book_id]);
+    // Delete the book
     await db.query('DELETE FROM books WHERE book_id = ?', [book_id]);
 
     res.json({
@@ -331,20 +428,21 @@ router.get('/borrows', async (req, res) => {
         bt.borrower_id,
         u.username AS borrower_name,
         u.email AS borrower_email,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author,
         b.isbn,
-        b.owner_id,
+        i.owner_id,
         ou.username AS owner_name,
         bt.borrow_date,
         bt.due_date,
         bt.return_date,
         bt.status
       FROM borrow_transactions bt
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
+      JOIN books b ON i.book_id = b.book_id
       JOIN users u ON bt.borrower_id = u.user_id
-      JOIN books b ON bt.book_id = b.book_id
-      JOIN users ou ON b.owner_id = ou.user_id
+      JOIN users ou ON i.owner_id = ou.user_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -360,7 +458,7 @@ router.get('/borrows', async (req, res) => {
     }
 
     if (book_id) {
-      query += ` AND bt.book_id = ?`;
+      query += ` AND i.book_id = ?`;
       queryParams.push(parseInt(book_id));
     }
 
@@ -373,6 +471,7 @@ router.get('/borrows', async (req, res) => {
     let countQuery = `
       SELECT COUNT(*) as total
       FROM borrow_transactions bt
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
       WHERE 1=1
     `;
     const countParams = [];
@@ -388,7 +487,7 @@ router.get('/borrows', async (req, res) => {
     }
 
     if (book_id) {
-      countQuery += ` AND bt.book_id = ?`;
+      countQuery += ` AND i.book_id = ?`;
       countParams.push(parseInt(book_id));
     }
 
@@ -498,13 +597,14 @@ router.get('/fines', async (req, res) => {
         f.paid,
         f.issued_at,
         f.paid_at,
-        bt.book_id,
+        i.book_id,
         b.title,
         b.author
       FROM fines f
       JOIN users u ON f.user_id = u.user_id
       LEFT JOIN borrow_transactions bt ON f.transaction_id = bt.transaction_id
-      LEFT JOIN books b ON bt.book_id = b.book_id
+      LEFT JOIN inventory i ON bt.inventory_id = i.inventory_id
+      LEFT JOIN books b ON i.book_id = b.book_id
       WHERE 1=1
     `;
     const queryParams = [];
@@ -702,7 +802,7 @@ router.get('/users', async (req, res) => {
 router.get('/statistics', async (req, res) => {
   try {
     // total number of books
-    const [bookCount] = await db.query('SELECT COUNT(*) as total FROM books');
+    const [bookCount] = await db.query('SELECT COUNT(DISTINCT book_id) as total FROM books');
 
     // total number of users
     const [userCount] = await db.query('SELECT COUNT(*) as total FROM users');
@@ -737,7 +837,8 @@ router.get('/statistics', async (req, res) => {
         b.category,
         COUNT(*) as borrow_times
       FROM borrow_transactions bt
-      JOIN books b ON bt.book_id = b.book_id
+      JOIN inventory i ON bt.inventory_id = i.inventory_id
+      JOIN books b ON i.book_id = b.book_id
       GROUP BY b.category
       ORDER BY borrow_times DESC
       LIMIT 10`,
