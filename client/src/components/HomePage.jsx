@@ -90,14 +90,6 @@ function HomePage({ onLoginSuccess }) {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="home-button home-button-secondary home-guest-button"
-            onClick={handleGuestClick}
-          >
-            Continue as Guest
-          </button>
-
           <p className="home-message">{message}</p>
         </form>
       </div>

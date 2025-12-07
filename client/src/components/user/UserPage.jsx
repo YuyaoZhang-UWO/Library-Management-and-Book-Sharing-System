@@ -21,9 +21,6 @@ export default function UserPage({
         <div className="user-sidebar-header">
           <h2 className="user-sidebar-title">Welcome！ {user?.email}</h2>
           <div className="user-sidebar-actions">
-            <button type="button" onClick={onChangePasswordClick}>
-              Change Password
-            </button>
             <button type="button" onClick={onLogout}>
               Log Out
             </button>

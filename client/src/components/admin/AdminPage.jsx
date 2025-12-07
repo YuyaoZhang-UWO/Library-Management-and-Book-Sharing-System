@@ -53,12 +53,9 @@ export default function AdminPage({
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <h2 className="admin-sidebar-title">
-            Admin{displayName ? `: ${displayName}` : ''}
+            Administrator{displayName ? `: ${displayName}` : ''}
           </h2>
           <div className="admin-sidebar-actions">
-            <button type="button" onClick={onChangePasswordClick}>
-              Change Password
-            </button>
             <button type="button" onClick={onLogout}>
               Log Out
             </button>
