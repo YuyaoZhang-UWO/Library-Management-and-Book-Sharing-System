@@ -140,7 +140,10 @@ def predict():
             cursor.execute("""
                 SELECT DISTINCT book_id FROM reviews WHERE reviewer_id = %s
                 UNION
-                SELECT DISTINCT book_id FROM borrow_transactions WHERE borrower_id = %s
+                SELECT DISTINCT i.book_id 
+                FROM borrow_transactions bt
+                JOIN inventory i ON bt.inventory_id = i.inventory_id
+                WHERE bt.borrower_id = %s
             """, (user_id, user_id))
             excluded_books = {row['book_id'] for row in cursor.fetchall()}
         
