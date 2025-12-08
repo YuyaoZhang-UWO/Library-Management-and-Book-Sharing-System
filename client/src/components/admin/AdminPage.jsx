@@ -61,9 +61,6 @@ export default function AdminPage({
             Admin{displayName ? `: ${displayName}` : ''}
           </h2>
           <div className="admin-sidebar-actions">
-            <button type="button" onClick={onChangePasswordClick}>
-              Change Password
-            </button>
             <button type="button" onClick={onLogout}>
               Log Out
             </button>
@@ -121,7 +118,9 @@ export default function AdminPage({
           </button>
           <button
             type="button"
-            className={activeTab === 'analytics' ? 'admin-tab active' : 'admin-tab'}
+            className={
+              activeTab === 'analytics' ? 'admin-tab active' : 'admin-tab'
+            }
             onClick={() => setActiveTab('analytics')}
           >
             Analytics

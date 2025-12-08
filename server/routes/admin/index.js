@@ -47,9 +47,10 @@ router.get('/books', async (req, res) => {
     const [books] = await db.query(query, queryParams);
 
     // Format the response to match the old structure
-    const formattedBooks = books.map(book => {
-      const availability_status = book.available_copies > 0 ? 'available' : 'lent_out';
-      
+    const formattedBooks = books.map((book) => {
+      const availability_status =
+        book.available_copies > 0 ? 'available' : 'lent_out';
+
       return {
         book_id: book.book_id,
         title: book.title,
@@ -61,11 +62,14 @@ router.get('/books', async (req, res) => {
         owner_name: book.owner_name,
         availability_status: availability_status,
         created_at: book.created_at,
+        available_copies: book.available_copies,
+        total_copies: book.total_copies,
       };
     });
 
     // get total number of books
-    let countQuery = 'SELECT COUNT(DISTINCT book_id) as total FROM books WHERE 1=1';
+    let countQuery =
+      'SELECT COUNT(DISTINCT book_id) as total FROM books WHERE 1=1';
     const countParams = [];
     if (search) {
       countQuery += ` AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)`;
@@ -144,17 +148,25 @@ router.get('/books/:book_id', async (req, res) => {
       JOIN users u ON i.owner_id = u.user_id
       WHERE i.book_id = ?
       ORDER BY i.copy_number`,
-      [book_id]
+      [book_id],
     );
 
     // Determine availability status
-    const hasAvailable = inventory.some(inv => inv.status === 'available');
+    const hasAvailable = inventory.some((inv) => inv.status === 'available');
     const availability_status = hasAvailable ? 'available' : 'lent_out';
-    
+
     // Get first available owner info for backward compatibility
-    const firstAvailable = inventory.find(inv => inv.status === 'available');
-    const owner_id = firstAvailable ? firstAvailable.owner_id : (inventory.length > 0 ? inventory[0].owner_id : null);
-    const owner_name = firstAvailable ? firstAvailable.owner_name : (inventory.length > 0 ? inventory[0].owner_name : null);
+    const firstAvailable = inventory.find((inv) => inv.status === 'available');
+    const owner_id = firstAvailable
+      ? firstAvailable.owner_id
+      : inventory.length > 0
+      ? inventory[0].owner_id
+      : null;
+    const owner_name = firstAvailable
+      ? firstAvailable.owner_name
+      : inventory.length > 0
+      ? inventory[0].owner_name
+      : null;
 
     res.json({
       status: 'success',
@@ -224,7 +236,7 @@ router.post('/books', async (req, res) => {
       // Get the next copy number for this book
       const [copyCount] = await connection.query(
         'SELECT MAX(copy_number) as max_copy FROM inventory WHERE book_id = ?',
-        [book_id]
+        [book_id],
       );
       const nextCopyNumber = (copyCount[0].max_copy || 0) + 1;
 
@@ -233,14 +245,14 @@ router.post('/books', async (req, res) => {
         `INSERT INTO inventory 
          (book_id, copy_number, owner_id, status, location)
          VALUES (?, ?, ?, 'available', NULL)`,
-        [book_id, nextCopyNumber, owner_id]
+        [book_id, nextCopyNumber, owner_id],
       );
 
       // Initialize book_statistics
       await connection.query(
         `INSERT INTO book_statistics (book_id, times_borrowed, average_rating)
          VALUES (?, 0, NULL)`,
-        [book_id]
+        [book_id],
       );
 
       await connection.commit();
@@ -386,7 +398,7 @@ router.delete('/books/:book_id', async (req, res) => {
        FROM borrow_transactions bt
        JOIN inventory i ON bt.inventory_id = i.inventory_id
        WHERE i.book_id = ? AND bt.status = 'borrowed'`,
-      [book_id]
+      [book_id],
     );
 
     if (activeBorrows[0].count > 0) {
@@ -805,7 +817,9 @@ router.use('/analytics', require('./analytics'));
 router.get('/statistics', async (req, res) => {
   try {
     // total number of books
-    const [bookCount] = await db.query('SELECT COUNT(DISTINCT book_id) as total FROM books');
+    const [bookCount] = await db.query(
+      'SELECT COUNT(DISTINCT book_id) as total FROM books',
+    );
 
     // total number of users
     const [userCount] = await db.query('SELECT COUNT(*) as total FROM users');

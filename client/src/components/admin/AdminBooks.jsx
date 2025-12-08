@@ -19,7 +19,6 @@ export default function AdminBooks({ token }) {
     isbn: '',
     category: '',
     conditions: '',
-    availability_status: 'available',
   });
 
   useEffect(() => {
@@ -79,7 +78,6 @@ export default function AdminBooks({ token }) {
       isbn: '',
       category: '',
       conditions: '',
-      availability_status: 'available',
     });
     setError('');
     setMessage('');
@@ -95,7 +93,6 @@ export default function AdminBooks({ token }) {
       isbn: book.isbn || '',
       category: book.category || '',
       conditions: book.conditions || '',
-      availability_status: book.availability_status || 'available',
     });
     setError('');
     setMessage('');
@@ -129,7 +126,6 @@ export default function AdminBooks({ token }) {
         isbn: formData.isbn.trim() || undefined,
         category: formData.category.trim() || undefined,
         conditions: formData.conditions.trim() || undefined,
-        availability_status: formData.availability_status || undefined,
       };
 
       let res;
@@ -279,7 +275,7 @@ export default function AdminBooks({ token }) {
                 <th>ISBN</th>
                 <th>Category</th>
                 <th>Owner</th>
-                <th>Status</th>
+                <th>Available / Total</th>
                 <th>Added</th>
                 <th className="admin-books-actions-column">Actions</th>
               </tr>
@@ -303,16 +299,12 @@ export default function AdminBooks({ token }) {
                   <td>{book.isbn || '-'}</td>
                   <td>{book.category || '-'}</td>
                   <td>{book.owner_name || '-'}</td>
-                  <td className="admin-books-status">
-                    <span
-                      className={
-                        book.availability_status === 'available'
-                          ? 'admin-books-status-badge admin-books-status-available'
-                          : 'admin-books-status-badge admin-books-status-lent'
-                      }
-                    >
-                      {book.availability_status}
-                    </span>
+                  <td className="admin-books-number-cell">
+                    {(book.available_copies != null
+                      ? book.available_copies
+                      : 0) +
+                      ' / ' +
+                      (book.total_copies != null ? book.total_copies : 0)}
                   </td>
                   <td>{formatDate(book.created_at)}</td>
                   <td>
@@ -438,20 +430,6 @@ export default function AdminBooks({ token }) {
                     handleFormChange('conditions', event.target.value)
                   }
                 />
-              </label>
-
-              <label className="admin-books-form-label">
-                <span className="admin-books-form-text">Status</span>
-                <select
-                  className="admin-books-form-input"
-                  value={formData.availability_status}
-                  onChange={(event) =>
-                    handleFormChange('availability_status', event.target.value)
-                  }
-                >
-                  <option value="available">available</option>
-                  <option value="lent_out">lent_out</option>
-                </select>
               </label>
             </div>
 
