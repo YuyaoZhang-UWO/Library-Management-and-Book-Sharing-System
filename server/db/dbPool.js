@@ -2,8 +2,8 @@ const mysql = require('mysql2/promise');
 
 const db = mysql.createPool({
   host: 'localhost',
-  user: 'library_manage',
-  password: '123456',
+  user: 'root',
+  password: '20030802Shy',
   database: 'library_sharing_system',
   timezone: '-04:00',
   dateStrings: true,

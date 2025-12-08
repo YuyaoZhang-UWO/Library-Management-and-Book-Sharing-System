@@ -218,6 +218,7 @@ export default function BorrowBooks({ token, user }) {
                 <th>Author</th>
                 <th>Category</th>
                 <th>Owner</th>
+                <th>Status</th>
                 <th>Added</th>
                 <th className="borrow-books-actions-column">Action</th>
               </tr>
@@ -247,6 +248,17 @@ export default function BorrowBooks({ token, user }) {
                   <td>{book.author || '-'}</td>
                   <td>{book.category || '-'}</td>
                   <td>{book.owner_name || '-'}</td>
+                  <td className="borrow-books-status">
+                    <span
+                      className={
+                        book.available_count > 0
+                          ? 'borrow-books-status-badge borrow-books-status-available'
+                          : 'borrow-books-status-badge borrow-books-status-lent'
+                      }
+                    >
+                      {book.available_count || 0} available
+                    </span>
+                  </td>
                   <td>{formatDate(book.created_at)}</td>
                   <td>
                     <button
@@ -255,7 +267,7 @@ export default function BorrowBooks({ token, user }) {
                       onClick={() => handleBorrow(book.book_id)}
                       disabled={
                         borrowLoadingId === book.book_id ||
-                        book.availability_status !== 'available'
+                        (book.available_count || 0) === 0
                       }
                     >
                       {borrowLoadingId === book.book_id
