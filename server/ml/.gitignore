@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Data and models (regenerate from SQL)
+data/
+*.pkl
+*.csv
+
+# Logs
+*.log
+ml_service.log
+
+# OS files
+.DS_Store
