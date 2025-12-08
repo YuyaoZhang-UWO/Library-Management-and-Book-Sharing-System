@@ -30,6 +30,7 @@ export default function Recommendations({ token, onViewBook }) {
       const result = await response.json();
       
       if (result.status === 'success') {
+        console.log('Recommendations received:', result.data);
         setRecommendations(result.data);
         setSource(result.source);
       } else {
@@ -45,8 +46,9 @@ export default function Recommendations({ token, onViewBook }) {
 
   const renderStars = (rating) => {
     const numRating = Number(rating) || 0;
-    const fullStars = Math.floor(numRating);
-    const hasHalfStar = numRating % 1 >= 0.5;
+    const roundedRating = Math.round(numRating * 2) / 2;
+    const fullStars = Math.floor(roundedRating);
+    const hasHalfStar = roundedRating % 1 !== 0;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     
     return (
