@@ -7,6 +7,7 @@ import MyWaitlist from './MyWaitlist.jsx';
 import MyFines from './MyFines.jsx';
 import Notifications from './Notifications.jsx';
 import Recommendations from './Recommendations.jsx';
+import MyFavourites from './MyFavourites.jsx';
 
 export default function UserPage({
   token,
@@ -22,9 +23,6 @@ export default function UserPage({
         <div className="user-sidebar-header">
           <h2 className="user-sidebar-title">Welcome！ {user?.email}</h2>
           <div className="user-sidebar-actions">
-            <button type="button" onClick={onChangePasswordClick}>
-              Change Password
-            </button>
             <button type="button" onClick={onLogout}>
               Log Out
             </button>
@@ -34,7 +32,9 @@ export default function UserPage({
         <div className="user-sidebar-tabs">
           <button
             type="button"
-            className={activeTab === 'recommendations' ? 'user-tab active' : 'user-tab'}
+            className={
+              activeTab === 'recommendations' ? 'user-tab active' : 'user-tab'
+            }
             onClick={() => setActiveTab('recommendations')}
           >
             📚 Recommendations
@@ -46,6 +46,16 @@ export default function UserPage({
             onClick={() => setActiveTab('borrow')}
           >
             Borrow Books
+          </button>
+
+          <button
+            type="button"
+            className={
+              activeTab === 'favourites' ? 'user-tab active' : 'user-tab'
+            }
+            onClick={() => setActiveTab('favourites')}
+          >
+            My Favourites
           </button>
 
           <button
@@ -97,9 +107,17 @@ export default function UserPage({
       </aside>
 
       <main className="user-content">
-        {activeTab === 'recommendations' && <Recommendations token={token} user={user} onViewBook={() => setActiveTab('borrow')} />}
+        {activeTab === 'recommendations' && (
+          <Recommendations
+            token={token}
+            user={user}
+            onViewBook={() => setActiveTab('borrow')}
+          />
+        )}
 
         {activeTab === 'borrow' && <BorrowBooks token={token} user={user} />}
+
+        {activeTab === 'favourites' && <MyFavourites token={token} />}
 
         {activeTab === 'borrowed' && (
           <MyBorrowedBooks token={token} user={user} />

@@ -11,6 +11,8 @@ export default function BorrowBooks({ token, user }) {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [borrowLoadingId, setBorrowLoadingId] = useState(null);
+  const [favoriteLoadingId, setFavoriteLoadingId] = useState(null);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -35,6 +37,31 @@ export default function BorrowBooks({ token, user }) {
     };
 
     fetchCategories();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchFavorites = async () => {
+      try {
+        const res = await fetch('/api/user/favorites?page=1&limit=1000', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') {
+          throw new Error(data.message || 'Failed to load favorites');
+        }
+        const favs = (data.data && data.data.favorites) || [];
+        const ids = new Set(favs.map((f) => f.book_id));
+        setFavoriteIds(ids);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchFavorites();
   }, [token]);
 
   const fetchBooks = async (pageNumber = 1) => {
@@ -107,11 +134,77 @@ export default function BorrowBooks({ token, user }) {
       }
 
       setMessage('Book borrowed successfully.');
-      setBooks((prev) => prev.filter((b) => b.book_id !== bookId));
+      setBooks((prev) =>
+        prev.map((b) =>
+          b.book_id === bookId
+            ? {
+                ...b,
+                available_count: Math.max((b.available_count || 1) - 1, 0),
+              }
+            : b,
+        ),
+      );
     } catch (err) {
       setError(err.message || 'Failed to borrow book');
     } finally {
       setBorrowLoadingId(null);
+    }
+  };
+
+  const handleToggleFavorite = async (book) => {
+    if (!token) return;
+
+    const bookId = book.book_id;
+    const isFavorited = favoriteIds.has(bookId);
+
+    setFavoriteLoadingId(bookId);
+    setError('');
+    setMessage('');
+
+    try {
+      if (isFavorited) {
+        const res = await fetch('/api/user/favorites', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ book_id: bookId }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') {
+          throw new Error(data.message || 'Failed to remove favorite');
+        }
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(bookId);
+          return next;
+        });
+        setMessage('Removed from favorites.');
+      } else {
+        const res = await fetch('/api/user/favorites', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ book_id: bookId }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') {
+          throw new Error(data.message || 'Failed to add favorite');
+        }
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          next.add(bookId);
+          return next;
+        });
+        setMessage('Added to favorites.');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update favorites');
+    } finally {
+      setFavoriteLoadingId(null);
     }
   };
 
@@ -133,7 +226,8 @@ export default function BorrowBooks({ token, user }) {
         <div>
           <h2 className="borrow-books-title">Borrow Books</h2>
           <p className="borrow-books-subtitle">
-            Search available books and borrow them from other users.
+            Search available books and borrow them from other users. Add
+            favorites to save books for later.
           </p>
         </div>
       </div>
@@ -224,59 +318,78 @@ export default function BorrowBooks({ token, user }) {
               </tr>
             </thead>
             <tbody>
-              {books.map((book) => (
-                <tr key={book.book_id}>
-                  <td>
-                    <div className="borrow-books-title-cell">
-                      <div className="borrow-books-book-title">
-                        {book.title}
+              {books.map((book) => {
+                const isFavorited = favoriteIds.has(book.book_id);
+                const isBorrowDisabled =
+                  borrowLoadingId === book.book_id ||
+                  (book.available_count || 0) === 0;
+                const isFavoriteDisabled = favoriteLoadingId === book.book_id;
+
+                return (
+                  <tr key={book.book_id}>
+                    <td>
+                      <div className="borrow-books-title-cell">
+                        <div className="borrow-books-book-title">
+                          {book.title}
+                        </div>
+                        <div className="borrow-books-book-meta">
+                          {book.isbn && (
+                            <span className="borrow-books-tag">
+                              ISBN: {book.isbn}
+                            </span>
+                          )}
+                          {book.conditions && (
+                            <span className="borrow-books-tag">
+                              Condition: {book.conditions}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="borrow-books-book-meta">
-                        {book.isbn && (
-                          <span className="borrow-books-tag">
-                            ISBN: {book.isbn}
-                          </span>
-                        )}
-                        {book.conditions && (
-                          <span className="borrow-books-tag">
-                            Condition: {book.conditions}
-                          </span>
-                        )}
+                    </td>
+                    <td>{book.author || '-'}</td>
+                    <td>{book.category || '-'}</td>
+                    <td>{book.owner_name || '-'}</td>
+                    <td className="borrow-books-status">
+                      <span
+                        className={
+                          book.available_count > 0
+                            ? 'borrow-books-status-badge borrow-books-status-available'
+                            : 'borrow-books-status-badge borrow-books-status-lent'
+                        }
+                      >
+                        {book.available_count || 0} available
+                      </span>
+                    </td>
+                    <td>{formatDate(book.created_at)}</td>
+                    <td>
+                      <div className="borrow-books-action-buttons">
+                        <button
+                          type="button"
+                          className={
+                            isFavorited
+                              ? 'borrow-books-fav-button borrow-books-fav-button-active'
+                              : 'borrow-books-fav-button'
+                          }
+                          onClick={() => handleToggleFavorite(book)}
+                          disabled={isFavoriteDisabled}
+                        >
+                          {isFavorited ? '★' : '☆'}
+                        </button>
+                        <button
+                          type="button"
+                          className="borrow-books-button borrow-books-button-small"
+                          onClick={() => handleBorrow(book.book_id)}
+                          disabled={isBorrowDisabled}
+                        >
+                          {borrowLoadingId === book.book_id
+                            ? 'Borrowing…'
+                            : 'Borrow'}
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td>{book.author || '-'}</td>
-                  <td>{book.category || '-'}</td>
-                  <td>{book.owner_name || '-'}</td>
-                  <td className="borrow-books-status">
-                    <span
-                      className={
-                        book.available_count > 0
-                          ? 'borrow-books-status-badge borrow-books-status-available'
-                          : 'borrow-books-status-badge borrow-books-status-lent'
-                      }
-                    >
-                      {book.available_count || 0} available
-                    </span>
-                  </td>
-                  <td>{formatDate(book.created_at)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="borrow-books-button borrow-books-button-small"
-                      onClick={() => handleBorrow(book.book_id)}
-                      disabled={
-                        borrowLoadingId === book.book_id ||
-                        (book.available_count || 0) === 0
-                      }
-                    >
-                      {borrowLoadingId === book.book_id
-                        ? 'Borrowing…'
-                        : 'Borrow'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

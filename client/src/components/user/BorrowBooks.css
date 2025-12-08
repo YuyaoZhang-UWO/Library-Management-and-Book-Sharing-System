@@ -235,6 +235,46 @@
 
 .borrow-books-actions-column {
   width: 130px;
+  text-align: center;
+}
+
+.borrow-books-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.borrow-books-fav-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.borrow-books-fav-button:hover:not(:disabled) {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #f97316;
+}
+
+.borrow-books-fav-button-active {
+  border-color: #f97316;
+  background: #fffbeb;
+  color: #ea580c;
+}
+
+.borrow-books-fav-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .borrow-books-pagination {
@@ -280,5 +320,14 @@
 
   .borrow-books-actions {
     justify-content: flex-start;
+  }
+
+  .borrow-books-actions-column {
+    width: 120px;
+    text-align: center;
+  }
+
+  .borrow-books-action-buttons {
+    justify-content: center;
   }
 }
